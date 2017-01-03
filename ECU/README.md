@@ -5,4 +5,4 @@ The EcuSensor folder contains an Arduino sketch for an Arduino mini. You can sel
 
 The ECU folder contains a lua script for the FrSky Horus with OpenTX 2.2. This script shows the ECU terminal on the Horus.
 
-![ECU Terminal](https://github.com/RealTadango/ssensors/raw/master/ECU%20Terminal.jpeg)
+![ECU Terminal](ECU%20Terminal.jpeg)
