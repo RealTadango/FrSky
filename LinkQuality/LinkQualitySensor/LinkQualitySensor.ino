@@ -16,6 +16,7 @@ byte buffer[25];
 long index = 0;
 byte previousValue = 0;
 bool inFrame = false;
+int sensorDelay = 0;
 
 bool lastFrameLosses[frameLossBuffer];
 int lastFrameLossesIndex = 0;
@@ -121,13 +122,34 @@ void sendFrame() {
   lh.longValue = currentpercentage;
 
   byte frame[8];
-  frame[0] = SPORT_HEADER_DATA;    
-  frame[1] = lowByte(SENSOR_APPL_ID);
-  frame[2] = highByte(SENSOR_APPL_ID);
-  frame[3] = lh.byteValue[0];
-  frame[4] = lh.byteValue[1];
-  frame[5] = lh.byteValue[2];
-  frame[6] = lh.byteValue[3];
+
+  if (sensorDelay == 0)
+  {
+    frame[0] = SPORT_HEADER_DATA;    
+    frame[1] = lowByte(SENSOR_APPL_ID);
+    frame[2] = highByte(SENSOR_APPL_ID);
+    frame[3] = lh.byteValue[0];
+    frame[4] = lh.byteValue[1];
+    frame[5] = lh.byteValue[2];
+    frame[6] = lh.byteValue[3];
+  }
+  else
+  {
+    frame[0] = SPORT_HEADER_DISCARD;    
+    frame[1] = 0;
+    frame[2] = 0;
+    frame[3] = 0;
+    frame[4] = 0;
+    frame[5] = 0;
+    frame[6] = 0;
+  }
+
+  sensorDelay++;
+
+  if(sensorDelay == 5)
+  {
+    sensorDelay = 0;
+  }
 
   //Calculate checksum for the frame
   frame[7] = getChecksum(frame, 0, 7);
