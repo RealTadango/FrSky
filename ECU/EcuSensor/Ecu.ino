@@ -57,6 +57,9 @@ int enterKeyRepeat = 0;
 
 void HandleEvojetFrame()
 {
+  //Led on indicates data from ECU
+  digitalWrite(LED_BUILTIN, HIGH);
+
   byte bcdData[4];
 
 //Read other sensor data later
@@ -316,6 +319,9 @@ void SendKeyCode()
 
 void HandleXicoyFrame()
 {
+  //Led on indicates data from ECU
+  digitalWrite(LED_BUILTIN, HIGH);
+
   int keyByte = 35;
 
   //Correct frame bytes

@@ -2,8 +2,8 @@
 
 #define DEBUG
 
-//#define ECU_JETRONIC
-#define ECU_FADEC
+#define ECU_JETRONIC
+//#define ECU_FADEC
 
 #define SPORT_IN 3
 #define SPORT_OUT 3
@@ -68,6 +68,9 @@ void setup() {
 
   //Switch to input, single wire mode
   pinMode(SPORT_IN, INPUT);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop() {
