@@ -1,7 +1,7 @@
 # Powerbox Sensor
 This sensor provides telemetry data for Powerbox products
 
-Folder PowerBoxSensor contains an Arduino sketch for a Arduino Mini. RX port is connected to the Powerbox telemetry output. RB3 is connected to the S.Port of the X-Series receiver.
+Folder PowerBoxSensor contains an Arduino sketch for a Atmega 328 type Arduino ((Pro) Mini, Nano ect). RX port is connected to the Powerbox telemetry output. RB3 is connected to the S.Port of the X-Series receiver.
 
 This sensor maps the output from a Powerbox to FrSky sensor values. The powerbox must be set to input / telemetry type Futaba or S.Bus.
 
