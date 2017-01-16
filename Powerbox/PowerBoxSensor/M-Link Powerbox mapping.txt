@@ -1,22 +1,21 @@
 Powerbox Mercury M-Link sensor mapping
 0-NC
-1-Batt 1 mA consumed?
-2-Batt 2 mA consumed?
-3-Batt 1 voltage
-4-Batt 2 voltage
-5-??
-6-NC
-7-NC
-8-??
-9-GPS Speed 
+1-RX1 Errors
+2-RX2 Errors
+3-Batt1 Voltage
+4-Batt2 Voltage
+5-RX Holds (Byte 2), RX Frame loss (Byte 3)
+6-Batt1 mAh left
+7-Batt2 mAh left
+8-Longitude_H
+9-GPS Speed
 A-GPS Height
-B-GPS Distance from home
-C-GPS Traveled distance
-D-GPS Coordinates?
-E-GPS Coordinates?
-F-GPS Coordinates?
+B-GPS Distance
+C-GPS Traveled
+D-Longitude_L
+E-Latitude_H
+F-Latitude_L
 
-Raw capture (ID: ID+Type, Value 1, Value 2)
 Requesting sensor 0
 Requesting sensor 1: 10, 0, 0
 Requesting sensor 2: 20, 0, 0
@@ -34,7 +33,6 @@ Requesting sensor D: D0, B7, FD
 Requesting sensor E: E0, C4, 1F
 Requesting sensor F: F0, D7, 2E
 
-Raw capture with decimal values (ID: Type, Value)
 Requesting sensor 0
 Requesting sensor 1: 0, 0
 Requesting sensor 2: 0, 0
@@ -51,3 +49,4 @@ Requesting sensor C: 13, 2
 Requesting sensor D: 0, -498
 Requesting sensor E: 0, 4066
 Requesting sensor F: 0, 5961
+
