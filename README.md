@@ -2,12 +2,12 @@
 My sensor and lua collection for FrSky Horus and X series receivers with a S.Port
 
 Lua scripts:
- - LView: Grahical log file viewer
- - Graph: Graphing widget for telemetry
- - Gauge: Guage widget for telemetry
- - RBSMIX: Mixer script for additional Redundancy bus telemetry counters
- - Stall: Mixer script used as a landing assist with overspeed callout and stall warning
- - Start: Autostart mixer script, basically a delayed timer for auto throttle / elevator / flight mode
+ - [LView](https://github.com/RealTadango/FrSky/tree/master/LView): Grahical log file viewer
+ - [Graph](https://github.com/RealTadango/FrSky/tree/master/Graph): Graphing widget for telemetry
+ - [Gauge](https://github.com/RealTadango/FrSky/tree/master/Gauge): Guage widget for telemetry
+ - [RBSMIX](https://github.com/RealTadango/FrSky/tree/master/RBSMIX): Mixer script for additional Redundancy bus telemetry counters
+ - [Stall](https://github.com/RealTadango/FrSky/tree/master/Stall): Mixer script used as a landing assist with overspeed callout and stall warning
+ - [Start](https://github.com/RealTadango/FrSky/tree/master/Start): Autostart mixer script, basically a delayed timer for auto throttle / elevator / flight mode
 
 ## S.Port Sensors Build instructions
 
