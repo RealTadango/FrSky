@@ -1,5 +1,5 @@
-# ssensors
-My sensor collection for FrSky X series receivers with a S.Port
+# FrSky
+My sensor and lua collection for FrSky Horus and X series receivers with a S.Port
 
 ## Build instructions
 
