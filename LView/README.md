@@ -2,6 +2,8 @@
 
 ![Screenshot](screenshot.png)
 
+Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/LView/LView.lua
+
 Features:
  - Allows selection of a log file from the current model
  - Has different speed modes to read the logs
