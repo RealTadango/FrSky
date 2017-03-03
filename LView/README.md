@@ -22,10 +22,10 @@ Navigation during the graph:
  - Enter: Change the mode: Cursor, Zoom, Scroll
  - Rtn: Return to the previous step
 
-After starting a log file mus tbe selected. The script only shows the log files from the last 100 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is an choice for speed:
+After starting a log file must be selected. The script only shows the log files from the last 100 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is a choice for speed:
  - Accurate: Reads every line from the logfile to check if a session has ended or started.
  - Fast: This mode reads every 5th line from the logfile. This is faster but you might loose 5 lines in the beginning or end of the session.
- - Use index: If you have read the logfile before a session index is availabe and the log file is not analysed again. If you have added a new session to a current logfile you must choose one of the other options to index it again.
+ - Use index: If you have read the logfile before, a session index is availabe and the log file is not analysed again. If you have added a new session to a current logfile you must choose one of the other options to index it again.
  
 After the logfile has been analysed a session must be selected. Below the selected session the start time and duration is shown. Below the sessions up to 4 variables can be selected from the log file. Date and time are not available. The value must be a number to be able to be displayed in the graph. The folowing speed modes can be selected:
  - Accurate: Reads every value from the session
