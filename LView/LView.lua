@@ -133,7 +133,8 @@ end
 
 local function readIndex()
 	sessions = {}
-
+	sessionCount = 0
+	
 	local indexFile = io.open("/LOGS/" .. filename .. ".index", "r")
 
 	buffer = io.read(indexFile, 2048 * 32)
