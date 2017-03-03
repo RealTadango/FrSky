@@ -16,6 +16,7 @@ This lua script is a log viewer for the FrSky Horus transmitter running OpenTX. 
  - PgDn / PgUp: Select another option
  - Enter: Confirm the selection
  - Rtn: Return to the previous step
+
 Navigation during the graph:
  - Scroll left / right: Move the cursor, zoom in / out, scroll the graph
  - Enter: Change the mode: Cursor, Zoom, Scroll
