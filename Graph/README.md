@@ -2,10 +2,10 @@
 
 ![Screenshot](screenshot.png)
 
-Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/Graph/Graph.lua
+Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/Graph/main.lua
 
 Installation:
-Copy Graph.lua to WIDGETS\Graph on the SD card and you can select it as a Widget.
+Copy main.lua to WIDGETS\Graph on the SD card and you can select it as a Widget.
 
 This widget was designed to provide real-time graphing to OpenTX on the FrSky Horus radio.
 Possible usages are: Rssi strength / battery voltage monitoring, altitude plotting for gliders ect.
