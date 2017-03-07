@@ -4,6 +4,9 @@
 
 Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/LView/LView.lua
 
+Installation:
+Copy LView.lua to any location on the SD card and execute it through the SD browser.
+
 Features:
  - Allows selection of a log file from the current model
  - Has different speed modes to read the logs
