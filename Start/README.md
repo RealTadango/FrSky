@@ -18,6 +18,6 @@ Outputs:
  - A_ON: Autostart script active (-100 to 100 range)
  - A_TH: Autostart throttle control (-100 to 100 range)
  
-When the script is activated the delay period starts. The seconds left until auto throttle are called. During the delay period A_ON is set to 1024 and can be used to offset the elevator for a save climb. It also can be used to select / force the correct stabilize mode on the receiver / flight controller. When the delay period is over A_TH is increased to 1024 which can be used to apply throttle. When the duration period is over both A_ON and A_TH are set to -1024.
+When the script is activated the delay period starts. The seconds left until auto throttle are called. During the delay period A_ON is set to 100 and can be used to offset the elevator for a save climb. It also can be used to select / force the correct stabilize mode on the receiver / flight controller. When the delay period is over A_TH is increased to 100 which can be used to apply throttle. When the duration period is over both A_ON and A_TH are set to -100.
  
  

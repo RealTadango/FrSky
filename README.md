@@ -8,6 +8,7 @@ Lua scripts:
  - [RBSMIX](https://github.com/RealTadango/FrSky/tree/master/RBSMIX): Mixer script for additional Redundancy bus telemetry counters
  - [Stall](https://github.com/RealTadango/FrSky/tree/master/Stall): Mixer script used as a landing assist with overspeed callout and stall warning
  - [Start](https://github.com/RealTadango/FrSky/tree/master/Start): Autostart mixer script, basically a delayed timer for auto throttle / elevator / flight mode
+ - [RAS](https://github.com/RealTadango/FrSky/tree/master/RAS): RAS mixer script. This adds a virtual sensor for the RAS (SWR) value
 
 ## S.Port Sensors Build instructions
 
