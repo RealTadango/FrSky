@@ -10,7 +10,6 @@ local inputs = {
 local lastCall = 0
 
 local function run(activate, low, high, input, stall, overspeed)
-
 	if (activate / 10.24) >= low and (activate / 10.24) <= high then
 		if input <= stall then
 			if (getTime() - lastCall) > 180 then
@@ -20,13 +19,11 @@ local function run(activate, low, high, input, stall, overspeed)
 				playTone(400, 300, 100, 0, 1)
 				playTone(400, 500, 200, 0, 1)
 			end
-		else 
-			if input >= overspeed then
-				if (getTime() - lastCall) > 180 then
-					print("Speed")
-					lastCall = getTime()
-					playNumber(input, 0)
-				end
+		elseif input >= overspeed then
+			if (getTime() - lastCall) > 180 then
+				print("Speed")
+				lastCall = getTime()
+				playNumber(input, 0)
 			end
 		end
 	end

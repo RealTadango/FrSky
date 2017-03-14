@@ -15,7 +15,7 @@ local function run(activate, low, high, delay, duration)
 	if (activate / 10.24) >= low and (activate / 10.24) <= high then
 		if not isActive then
 			isActive = true
-			start = getTime()
+			start = getTime() + 50
 			lastCall = 0
 		end
 	else
@@ -23,7 +23,7 @@ local function run(activate, low, high, delay, duration)
 	end
 	
 	on = -1024
-	th = 0
+	th = -1024
 	
 	if isActive then
 		d = (getTime() - start) / 100
@@ -40,7 +40,7 @@ local function run(activate, low, high, delay, duration)
 			on = 1024
 
 			if d >= delay then
-				th = 2048
+				th = 1024
 			end
 		end
 	end
