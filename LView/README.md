@@ -26,7 +26,7 @@ Navigation during the graph:
  - Enter: Change the mode: Cursor, Zoom, Scroll, Min / Max adjust
  - Rtn: Return to the previous step
  - PgUp / PgDn: During the Min / Max mode these select the next / previous min / max value
- - Aileron stick: Move the cursor
+ - Aileron stick: Move the cursor or min / max during min / max mode
  - Elevator stick: Zoom in / out
  - Rudder stick: Scroll left / right
 

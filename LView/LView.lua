@@ -940,7 +940,11 @@ local function run_GRAPH(event)
 	local adjust = getValue('ail') / 200
 
 	if math.abs(adjust) > 0.5 then
-		run_GRAPH_Adjust(adjust, GRAPH_CURSOR)
+		if graphMode == GRAPH_MINMAX then
+			run_GRAPH_Adjust(adjust, GRAPH_MINMAX)
+		else
+			run_GRAPH_Adjust(adjust, GRAPH_CURSOR)
+		end
 	end
 
 	adjust = getValue('ele') / 200
