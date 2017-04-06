@@ -73,10 +73,12 @@ local cursor = 0
 local GRAPH_CURSOR = 0
 local GRAPH_ZOOM = 1
 local GRAPH_SCROLL = 2
+local GRAPH_MINMAX = 3
 local graphMode = GRAPH_CURSOR
 local graphStart = 0
 local graphSize = 0
 local graphTimeBase = 0
+local graphMinMaxIndex = 0
 
 local function doubleDigits(value)
 	if value < 10 then
@@ -286,8 +288,7 @@ local function drawOption(y, label, value, select_index)
 	lcd.drawText(5, y, label, TEXT_COLOR)
 
 	if activeOption then
-		lcd.drawFilledRectangle(100, y, 300, 20, TEXT_INVERTED_BGCOLOR)
-		lcd.drawText(100, y, value, TEXT_INVERTED_COLOR)
+		lcd.drawText(100, y, value, TEXT_INVERTED_COLOR + INVERS)
 	else
 		lcd.drawText(100, y, value, TEXT_COLOR)
 	end
@@ -357,6 +358,8 @@ local function drawGraph_base()
 		lcd.drawText(430, 130, "Curs.", CUSTOM_COLOR)
 	elseif graphMode == GRAPH_ZOOM then
 		lcd.drawText(430, 130, "Zoom", CUSTOM_COLOR)
+	elseif graphMode == GRAPH_MINMAX then
+		lcd.drawText(430, 130, "Mi-Ma", CUSTOM_COLOR)
 	else
 		lcd.drawText(430, 130, "Scroll", CUSTOM_COLOR)
 	end
@@ -367,9 +370,21 @@ local function drawGraph_points(points, min, max)
 
 	prevY = 240 - ((points[0] - min) / yScale)
 
+	if prevY > 240 then
+		prevY = 240
+	elseif prevY < 40 then
+		prevY = 40
+	end
+
 	for i = 0, #points - 1, 1 do
 		x1 = graphConfig.xstart + (xStep * i)
 		y = 240 - ((points[i + 1] - min) / yScale)
+
+		if y > 240 then
+			y = 240
+		elseif y < 40 then
+			y = 40
+		end
 
 		lcd.drawLine(x1, prevY, x1 + xStep, y, SOLID, CUSTOM_COLOR)
 
@@ -399,7 +414,11 @@ local function drawGraph()
 
 			if #points.points == 0 then
 				for i = 0, 100, 1 do
-					points.points[i] = values[varIndex - 1][graphStart + math_floor(i * skip)]
+					points.points[i] = values[varIndex - 1][math_floor(graphStart + (i * skip))]
+
+					if points.points[i] == nil then
+						points.points[i] = 0
+					end
 				end
 			end
 
@@ -427,8 +446,18 @@ local function drawGraph()
 			local x = graphConfig.xstart + (maxPos * xStep)
 			lcd.drawLine(x, 30, x, 40, SOLID, CUSTOM_COLOR)
 
-			lcd.drawText(cfg.maxx, cfg.maxy, points.max, CUSTOM_COLOR)
-			lcd.drawText(cfg.minx, cfg.miny, points.min, CUSTOM_COLOR)
+			if graphMode == GRAPH_MINMAX and graphMinMaxIndex == (varIndex - 2) * 2 then
+				lcd.drawText(cfg.maxx, cfg.maxy, points.max, TEXT_INVERTED_COLOR + INVERS)
+			else
+				lcd.drawText(cfg.maxx, cfg.maxy, points.max, CUSTOM_COLOR)
+			end
+
+			if graphMode == GRAPH_MINMAX and graphMinMaxIndex == ((varIndex - 2) * 2) + 1 then
+				lcd.drawText(cfg.minx, cfg.miny, points.min, TEXT_INVERTED_COLOR + INVERS)
+			else
+				lcd.drawText(cfg.minx, cfg.miny, points.min, CUSTOM_COLOR)
+			end
+
 			if points.points[cursor] ~= nil then
 				lcd.drawText(cfg.valx, cfg.valy, points.name .. " " .. points.points[cursor], CUSTOM_COLOR)
 			end
@@ -761,98 +790,169 @@ local function run_PARSEDATA(event)
 	return 0
 end
 
+local function run_GRAPH_Adjust(amount, mode)
+	if mode == GRAPH_CURSOR then
+		cursor = cursor + math.floor(amount)
+		if cursor > 100 then
+			cursor = 100
+		elseif cursor < 0 then
+			cursor = 0
+		end
+	elseif mode == GRAPH_ZOOM then
+		if amount > 4 then
+			amount = 4
+		elseif amount < -4 then
+			amount = -4
+		end
+
+		local oldgraphSize = graphSize
+		graphSize = math.floor(graphSize / (1 + (amount * 0.2)))
+
+		if graphSize < 100 then
+			graphSize = 100
+		end
+
+		if graphSize > (valPos - graphStart) then
+			graphSize = (valPos - graphStart)
+		end
+
+		local delta = oldgraphSize - graphSize
+		graphStart = graphStart + math_floor((delta * (cursor / 100)))
+
+		if graphStart < 0 then
+			graphStart = 0
+		end
+
+		graphSize = math_floor(graphSize)
+
+		for varIndex = 2, 5, 1 do
+			if dataSelection[varIndex].value ~= 0 then
+				points[varIndex - 1].points = {}
+			end
+		end
+	elseif mode == GRAPH_MINMAX then
+		local point = points[(math.floor(graphMinMaxIndex / 2)) + 1]
+
+		local delta = math.floor((point.max - point.min) / 50 * amount)
+
+		if amount > 0 and delta < 1 then
+			delta = 1
+		elseif amount < 0 and delta > -1 then
+			delta = -1
+		end
+
+		if graphMinMaxIndex % 2 == 0 then
+			point.max = point.max + delta
+
+			if point.max < point.min then
+				point.max = point.min + 1
+			end
+		else
+			point.min = point.min + delta
+
+			if point.min > point.max then
+				point.min = point.max - 1
+			end
+		end
+	elseif mode == GRAPH_SCROLL then
+		graphStart = graphStart + math.floor(((graphSize / 10) * amount))
+
+		if graphStart + graphSize > valPos then
+			graphStart = valPos - graphSize
+		elseif graphStart < 0 then
+			graphStart = 0
+		end
+
+		graphStart = math_floor(graphStart)
+
+		for varIndex = 2, 5, 1 do
+			if dataSelection[varIndex].value ~= 0 then
+				points[varIndex - 1].points = {}
+			end
+		end
+	end
+end
+
 local function run_GRAPH(event)
 	if event == EVT_EXIT_BREAK then
 		step = STEP_SELECTSESSION
 		return 0
+	elseif graphMode == GRAPH_MINMAX and event == EVT_PAGEDN_FIRST then
+		graphMinMaxIndex = graphMinMaxIndex + 1
+
+		if graphMinMaxIndex == 8 then
+			graphMinMaxIndex = 0
+		end
+
+		if graphMinMaxIndex == 2 and dataSelection[3].value == 0 then
+			graphMinMaxIndex = 4
+		end
+
+		if graphMinMaxIndex == 4 and dataSelection[4].value == 0 then
+			graphMinMaxIndex = 6
+		end
+
+		if graphMinMaxIndex == 6 and dataSelection[5].value == 0 then
+			graphMinMaxIndex = 0
+		end
+
+		if graphMinMaxIndex == 0 and dataSelection[2].value == 0 then
+			graphMinMaxIndex = 2
+		end
+	elseif graphMode == GRAPH_MINMAX and event == EVT_PAGEUP_FIRST then
+		graphMinMaxIndex = graphMinMaxIndex - 1
+
+		if graphMinMaxIndex < 0 then
+			graphMinMaxIndex = 7
+		end
+
+		if graphMinMaxIndex == 7 and dataSelection[5].value == 0 then
+			graphMinMaxIndex = 5
+		end
+
+		if graphMinMaxIndex == 5 and dataSelection[4].value == 0 then
+			graphMinMaxIndex = 3
+		end
+
+		if graphMinMaxIndex == 3 and dataSelection[3].value == 0 then
+			graphMinMaxIndex = 1
+		end
+
+		if graphMinMaxIndex == 1 and dataSelection[2].value == 0 then
+			graphMinMaxIndex = 7
+		end
 	elseif event == EVT_ENTER_BREAK or event == EVT_ROT_BREAK then
 		if graphMode == GRAPH_CURSOR then
 			graphMode = GRAPH_ZOOM
 		elseif graphMode == GRAPH_ZOOM then
 			graphMode = GRAPH_SCROLL
+		elseif graphMode == GRAPH_SCROLL then
+			graphMode = GRAPH_MINMAX
 		else
 			graphMode = GRAPH_CURSOR
 		end
 	elseif event == EVT_PLUS_FIRST or event == EVT_ROT_RIGHT or event == EVT_PLUS_REPT then
-		if graphMode == GRAPH_CURSOR then
-			cursor = cursor + 1
-			if cursor > 100 then
-				cursor = 100
-			end
-		elseif graphMode == GRAPH_ZOOM then
-			local oldgraphSize = graphSize
-			graphSize = graphSize / 1.2
-
-			if graphSize < 100 then
-				graphSize = 100
-			end
-
-			local delta = oldgraphSize - graphSize
-			graphStart = graphStart + math_floor((delta * (cursor / 100)))
-
-			graphSize = math_floor(graphSize)
-
-			for varIndex = 2, 5, 1 do
-				if dataSelection[varIndex].value ~= 0 then
-					points[varIndex - 1].points = {}
-				end
-			end
-		else
-			graphStart = graphStart + (graphSize / 10)
-			if graphStart + graphSize > valPos then
-				graphStart = valPos - graphSize
-			end
-
-			graphStart = math_floor(graphStart)
-
-			for varIndex = 2, 5, 1 do
-				if dataSelection[varIndex].value ~= 0 then
-					points[varIndex - 1].points = {}
-				end
-			end
-		end
+		run_GRAPH_Adjust(1, graphMode)
 	elseif event == EVT_MINUS_FIRST or event == EVT_ROT_LEFT or event == EVT_MINUS_REPT then
-		if graphMode == GRAPH_CURSOR then
-			cursor = cursor - 1
-			if cursor < 0 then
-				cursor = 0
-			end
-		elseif graphMode == GRAPH_ZOOM then
-			local oldgraphSize = graphSize
-			graphSize = graphSize * 1.2
+		run_GRAPH_Adjust(-1, graphMode)
+	end
 
-			if graphSize > (valPos - graphStart) then
-				graphSize = (valPos - graphStart)
-			end
+	local adjust = getValue('ail') / 200
 
-			local delta = oldgraphSize - graphSize
-			graphStart = graphStart + math_floor((delta * (cursor / 100)))
+	if math.abs(adjust) > 0.5 then
+		run_GRAPH_Adjust(adjust, GRAPH_CURSOR)
+	end
 
-			if graphStart < 0 then
-				graphStart = 0
-			end
+	adjust = getValue('ele') / 200
 
-			graphSize = math_floor(graphSize)
+	if math.abs(adjust) > 0.5 then
+		run_GRAPH_Adjust(adjust, GRAPH_ZOOM)
+	end
 
-			for varIndex = 2, 5, 1 do
-				if dataSelection[varIndex].value ~= 0 then
-					points[varIndex - 1].points = {}
-				end
-			end
-		else
-			graphStart = graphStart - (graphSize / 10)
-			if graphStart < 0 then
-				graphStart = 0
-			end
+	adjust = getValue('rud') / 200
 
-			graphStart = math_floor(graphStart)
-
-			for varIndex = 2, 5, 1 do
-				if dataSelection[varIndex].value ~= 0 then
-					points[varIndex - 1].points = {}
-				end
-			end
-		end
+	if math.abs(adjust) > 0.5 then
+		run_GRAPH_Adjust(adjust, GRAPH_SCROLL)
 	end
 
 	drawGraph()

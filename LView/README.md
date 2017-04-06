@@ -13,6 +13,7 @@ Features:
  - Allows up to 4 variables to be shown in the graph at the same time
  - Support a cursor, zoom and scroll mode
  - Indexes log files for faster loading the second time
+ - Adjustable min / max values per sensor
 
 This lua script is a log viewer for the FrSky Horus transmitter running OpenTX. It can be placed on the SD card in any location and is started from the SD explorer. Navigation during the menus:
  - Scroll left / right: Change a value
@@ -21,9 +22,13 @@ This lua script is a log viewer for the FrSky Horus transmitter running OpenTX. 
  - Rtn: Return to the previous step
 
 Navigation during the graph:
- - Scroll left / right: Move the cursor, zoom in / out, scroll the graph
- - Enter: Change the mode: Cursor, Zoom, Scroll
+ - Scroll left / right: Move the cursor, zoom in / out, scroll the graph, adjust the min / max value
+ - Enter: Change the mode: Cursor, Zoom, Scroll, Min / Max adjust
  - Rtn: Return to the previous step
+ - PgUp / PgDn: During the Min / Max mode these select the next / previous min / max value
+ - Aileron stick: Move the cursor
+ - Elevator stick: Zoom in / out
+ - Rudder stick: Scroll left / right
 
 After starting a log file must be selected. The script only shows the log files from the last 100 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is a choice for speed:
  - Accurate: Reads every line from the logfile to check if a session has ended or started.
