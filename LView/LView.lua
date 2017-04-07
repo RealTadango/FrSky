@@ -60,10 +60,10 @@ local values = {}
 
 local graphConfig = {
 	xstart = 60, xend = 420,
-	{ color = RED, minx = 5, maxx = 5, miny = 220, maxy = 40, valx = 5, valy = 250 },
-	{ color = BLUE, minx = 430, maxx = 430, miny = 220, maxy = 40, valx = 120, valy = 250  },
-	{ color = YELLOW, minx = 5, maxx = 5, miny = 200, maxy = 60, valx = 235, valy = 250  },
-	{ color = GREY, minx = 430, maxx = 430, miny = 200, maxy = 60, valx = 350, valy = 250  }
+	{ color = RED, minx = 5, maxx = 5, miny = 220, maxy = 40, valx = 5, valy = 249 },
+	{ color = BLUE, minx = 430, maxx = 430, miny = 220, maxy = 40, valx = 120, valy = 249  },
+	{ color = YELLOW, minx = 5, maxx = 5, miny = 200, maxy = 60, valx = 235, valy = 249  },
+	{ color = GREY, minx = 430, maxx = 430, miny = 200, maxy = 60, valx = 350, valy = 249  }
 }
 
 local xStep = (graphConfig.xend - graphConfig.xstart) / 100
@@ -406,6 +406,17 @@ local function drawGraph()
 	end
 
 	lcd.drawText(5, 130, cursorTime, CUSTOM_COLOR)
+
+	--Draw session view locations
+	local viewScale = valPos / 480
+	local viewStart = math.floor(graphStart / viewScale)
+	local viewEnd = math.floor((graphStart + graphSize) / viewScale)
+
+	lcd.setColor(CUSTOM_COLOR, RED)
+
+	lcd.drawLine(viewStart, 269, viewEnd, 269, SOLID, CUSTOM_COLOR)
+	lcd.drawLine(viewStart, 270, viewEnd, 270, SOLID, CUSTOM_COLOR)
+	lcd.drawLine(viewStart, 271, viewEnd, 271, SOLID, CUSTOM_COLOR)
 
 	for varIndex = 2, 5, 1 do
 		if dataSelection[varIndex].value ~= 0 then
