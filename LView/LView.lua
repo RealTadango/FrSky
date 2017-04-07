@@ -821,10 +821,16 @@ local function run_GRAPH_Adjust(amount, mode)
 
 		if graphSize < 100 then
 			graphSize = 100
+		elseif graphSize > valPos then
+			graphSize = valPos
 		end
 
 		if graphSize > (valPos - graphStart) then
-			graphSize = (valPos - graphStart)
+			if amount > 0  then
+				graphSize = valPos - graphStart
+			else
+				graphStart = valPos - graphSize
+			end
 		end
 
 		local delta = oldgraphSize - graphSize
