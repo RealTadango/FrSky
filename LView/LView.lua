@@ -831,13 +831,15 @@ local function run_GRAPH_Adjust(amount, mode)
 			else
 				graphStart = valPos - graphSize
 			end
-		end
+		else
+			local delta = oldgraphSize - graphSize
+			graphStart = graphStart + math_floor((delta * (cursor / 100)))
 
-		local delta = oldgraphSize - graphSize
-		graphStart = graphStart + math_floor((delta * (cursor / 100)))
-
-		if graphStart < 0 then
-			graphStart = 0
+			if graphStart < 0 then
+				graphStart = 0
+			elseif graphStart + graphSize > valPos then
+				graphStart = valPos - graphSize
+			end
 		end
 
 		graphSize = math_floor(graphSize)
