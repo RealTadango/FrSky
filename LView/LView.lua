@@ -243,7 +243,7 @@ local function collectData(file)
 
 		lines = lines + 1
 
-		if lines >= maxLines then
+		if lines > maxLines then
 			io.close(file)
 			return true
 		end
@@ -366,6 +366,10 @@ local function drawGraph_base()
 end
 
 local function drawGraph_points(points, min, max)
+	if min == max then
+		return
+	end
+
 	local yScale = (max - min) / 200
 
 	prevY = 240 - ((points[0] - min) / yScale)
@@ -393,7 +397,7 @@ local function drawGraph_points(points, min, max)
 end
 
 local function drawGraph()
-	skip = graphSize / 100
+	skip = graphSize / 101
 
 	lcd.setColor(CUSTOM_COLOR, BLACK)
 	drawGraph_base()
@@ -425,6 +429,9 @@ local function drawGraph()
 
 			if #points.points == 0 then
 				for i = 0, 100, 1 do
+					
+					--print("i:" .. i .. ", skip: " .. skip .. ", result:" .. math_floor(graphStart + (i * skip)))
+
 					points.points[i] = values[varIndex - 1][math_floor(graphStart + (i * skip))]
 
 					if points.points[i] == nil then
@@ -791,6 +798,8 @@ local function run_PARSEDATA(event)
 		if conversionStep == 4 then
 			graphStart = 0
 			graphSize = valPos
+			cursor = 0
+			graphMode = GRAPH_CURSOR
 			step = STEP_GRAPH
 		else
 			conversionIndex = 0
@@ -819,8 +828,8 @@ local function run_GRAPH_Adjust(amount, mode)
 		local oldgraphSize = graphSize
 		graphSize = math.floor(graphSize / (1 + (amount * 0.2)))
 
-		if graphSize < 100 then
-			graphSize = 100
+		if graphSize < 101 then
+			graphSize = 101
 		elseif graphSize > valPos then
 			graphSize = valPos
 		end
