@@ -27,8 +27,8 @@ Navigation during the graph:
  - Rtn: Return to the previous step
  - PgUp / PgDn: During the Min / Max mode these select the next / previous min / max value
  - Aileron stick: Move the cursor or min / max during min / max mode
- - Elevator stick: Zoom in / out
- - Rudder stick: Scroll left / right
+ - Elevator stick / Joystick Y: Zoom in / out
+ - Rudder stick / Joystick X: Scroll left / right
 
 After starting a log file must be selected. The script only shows the log files from the last 100 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is a choice for speed:
  - Accurate: Reads every line from the logfile to check if a session has ended or started.

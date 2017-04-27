@@ -981,7 +981,19 @@ local function run_GRAPH(event)
 		run_GRAPH_Adjust(adjust, GRAPH_ZOOM)
 	end
 
+	adjust = getValue('jsy') / 200
+
+	if math.abs(adjust) > 0.5 then
+		run_GRAPH_Adjust(adjust, GRAPH_ZOOM)
+	end
+
 	adjust = getValue('rud') / 200
+
+	if math.abs(adjust) > 0.5 then
+		run_GRAPH_Adjust(adjust, GRAPH_SCROLL)
+	end
+
+	adjust = getValue('jsx') / 200
 
 	if math.abs(adjust) > 0.5 then
 		run_GRAPH_Adjust(adjust, GRAPH_SCROLL)
