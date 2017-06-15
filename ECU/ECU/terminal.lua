@@ -77,10 +77,6 @@ local function run(event)
 	lcd.drawText(130, 85, line1, BLACK + DBLSIZE)
 	lcd.drawText(130, 125, line2, BLACK + DBLSIZE)
 	
-	--lcd.drawText(130, 85, line1, WHITE)
-	--lcd.drawText(1, 25, line2, MENU_TITLE_COLOR)
-	--lcd.drawText(1, 45, "Cmd: " .. cmd, MENU_TITLE_COLOR)
-
 	if cmd ~= 0 then
 		lcd.drawText(130, 25, "Cmd: " .. cmd, BLACK + DBLSIZE)
 		if delay == 0 then
