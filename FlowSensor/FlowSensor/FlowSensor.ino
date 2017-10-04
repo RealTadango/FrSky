@@ -22,8 +22,8 @@
 SoftwareSerial sport(SPORT_IN, SPORT_OUT, true);
 
 short tele_counter = 0;
-int count_raw = 0;
-int count_last = 0;
+long count_raw = 0;
+long count_last = 0;
 
 long lastTime = 0;
 
@@ -73,12 +73,12 @@ void loop() {
     NewValueSport(val);
   }
 
-  fuelUsed = (double)count_raw / PULSES_CFG;
+  fuelUsed = (uint16_t)(count_raw / PULSES_CFG);
 
   if (millis() > lastTime + 2000)
   {
     int diff = millis() - lastTime;
-    int timeCount = count_raw - count_last;
+    long timeCount = (count_raw - count_last);
 
     //calc fuel flow in ml/min
     fuelCurrent = (double)timeCount / PULSES_CFG * 60 / ((double)diff / 1000);
