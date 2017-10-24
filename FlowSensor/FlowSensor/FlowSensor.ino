@@ -7,7 +7,7 @@
 
 #define PULSES_IN 2
 //This is the pulses per ml * 2
-#define PULSES_CFG 24
+#define PULSES_CFG 5.33	//For B.I.O-TECH e.K. FCH-M-POM-LC (G 1/8) WITHOUT the restrictor
 
 #define SPORT_START 0x7E
 
