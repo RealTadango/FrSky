@@ -2,7 +2,6 @@
 
 /* Powerbox M-Link to S.Port converter */
 
-//#define DEBUG
 #define TIMEOUT 5000
 
 #define SPORT_IN 3
@@ -31,10 +30,6 @@
 
 SoftwareSerial sport(SPORT_IN, SPORT_OUT, true);
 
-#if defined(DEBUG)
-SoftwareSerial debug(7,8);
-#endif
-
 short addressIndex = 0x00;
 long lastTime = 0;
 byte buffer[4];
@@ -42,7 +37,7 @@ byte buffer_index = 0;
 short tele_counter = 0;
 
 //Data holders
-bool gps_enabled, usage_enabled = false;
+bool pb_enabled, gps_enabled, usage_enabled = false;
 
 int batt1Voltage, batt2Voltage = 0;
 int batt1Left, batt2Left = 0;
@@ -68,12 +63,6 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-
-#if defined(DEBUG)
-  debug.begin(115200);
-  debug.println("Debug start");
-  debug.listen();
-#endif
 }
 
 void loop() {
@@ -97,14 +86,6 @@ void loop() {
       addressIndex = 0;
     }
 
-/*
-#if defined(DEBUG)
-    debug.println("");
-    debug.print("Requesting sensor ");
-    debug.print(addressIndex, HEX);
-#endif
-  */
-    
     Serial.write(addressIndex);
     lastTime = micros();
 
@@ -141,35 +122,31 @@ void handleNewPBFrame(byte frame[4])
   byte id = (frame[1] & 0xF0) / 0x10;
   byte type = (frame[1] & 0x0F);
 
-#if defined(DEBUG)
-    debug.println("");    
-    debug.print(id, DEC);
-    debug.print(": ");
-    debug.print(frame[1] & 0x0F, DEC);
-    debug.print(", ");
-    debug.print(value, DEC);
-#endif
-
   if(id == 0x01)
   {
     rx1Errors = value;
+    pb_enabled = true;
   }
   else if(id == 0x02)
   {
     rx2Errors = value;
+    pb_enabled = true;
   }
   else if(id == 0x03)
   {
     batt1Voltage = value / 2;
+    pb_enabled = true;
   }
   else if(id == 0x04)
   {
     batt2Voltage = value  / 2;
+    pb_enabled = true;
   }
   else if(id == 0x05)
   {
     rxHolds = frame[2];
     rxFrameLoss = frame[3];
+    pb_enabled = true;
   }
   else if(id == 0x06 && type != 0)
   {
@@ -233,12 +210,12 @@ void getSensorFrame(byte data[])
   int applID = 0;
   longHelper lh;
 
-  if(tele_counter == 0)
+  if(tele_counter == 0 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RB1;
     lh.longValue = batt1Voltage * 100;
   }
-  else if(tele_counter == 1)
+  else if(tele_counter == 1 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RB2;
     lh.longValue = batt2Voltage * 100;
@@ -268,78 +245,78 @@ void getSensorFrame(byte data[])
     applID = SENSOR_APPL_ID_GTRAV;
     lh.longValue = gpsTravel * 100;
   }
-  else if(tele_counter == 7)
+  else if(tele_counter == 7 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RX1ERR;
     lh.longValue = rx1Errors;
   }
-  else if(tele_counter == 8)
+  else if(tele_counter == 8 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RX2ERR;
     lh.longValue = rx2Errors;
   }
-  else if(tele_counter == 9)
+  else if(tele_counter == 9 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RXFLS;
     lh.longValue = rxFrameLoss;
   }
-  else if(tele_counter == 10)
+  else if(tele_counter == 10 && pb_enabled)
   {
     applID = SENSOR_APPL_ID_RXHLDS;
     lh.longValue = rxHolds;
   }
-//  else if(tele_counter == 11)
-//  {
-//    applID = SENSOR_APPL_ID_GPS;
-//
-//    longHelper cv;
-//    cv.byteValue[0] = highByte(latHigh);
-//    cv.byteValue[1] = lowByte(latHigh);
-//    cv.byteValue[2] = highByte(latLow);
-//    cv.byteValue[3] = lowByte(latLow);
-//    
-//    long coor = cv.longValue;
-//      
-//    if(coor < 0)
-//    {
-//      coor = 0 - coor;          //Negative, make positive
-//      bitClear(coor, 31);       //South
-//      bitSet(coor, 30);
-//    }
-//    else
-//    {
-//      bitClear(coor, 31);       //North
-//      bitClear(coor, 30);
-//    }
-//
-//    lh.longValue = coor;
-//  }
-//  else if(tele_counter == 12)
-//  {
-//    applID = SENSOR_APPL_ID_GPS;
-//
-//    longHelper cv;
-//    cv.byteValue[0] = highByte(longHigh);
-//    cv.byteValue[1] = lowByte(longHigh);
-//    cv.byteValue[2] = highByte(longLow);
-//    cv.byteValue[3] = lowByte(longLow);
-//    
-//    long coor = cv.longValue;
-//
-//    if(coor < 0)
-//    {
-//      coor = 0 - coor;          //Negative, make positive
-//      bitSet(coor, 31);         //West
-//      bitSet(coor, 30);
-//    }
-//    else
-//    {
-//      bitSet(coor, 31);         //East
-//      bitClear(coor, 30);
-//    }
-//
-//    lh.longValue = coor;
-//  }
+  else if(tele_counter == 11 && gps_enabled)
+  {
+    applID = SENSOR_APPL_ID_GPS;
+
+    longHelper cv;
+    cv.byteValue[3] = highByte(latHigh);
+    cv.byteValue[2] = lowByte(latHigh);
+    cv.byteValue[1] = highByte(latLow);
+    cv.byteValue[0] = lowByte(latLow);
+    
+    long coor = cv.longValue / 100 * 6;
+      
+    if(coor < 0)
+    {
+      coor = 0 - coor;          //Negative, make positive
+      bitClear(coor, 31);       //South
+      bitSet(coor, 30);
+    }
+    else
+    {
+      bitClear(coor, 31);       //North
+      bitClear(coor, 30);
+    }
+
+    lh.longValue = coor;
+  }
+  else if(tele_counter == 12 && gps_enabled)
+  {
+    applID = SENSOR_APPL_ID_GPS;
+
+    longHelper cv;
+    cv.byteValue[3] = highByte(longHigh);
+    cv.byteValue[2] = lowByte(longHigh);
+    cv.byteValue[1] = highByte(longLow);
+    cv.byteValue[0] = lowByte(longLow);
+    
+    long coor = cv.longValue / 100 * 6;
+
+    if(coor < 0)
+    {
+      coor = 0 - coor;          //Negative, make positive
+      bitSet(coor, 31);         //West
+      bitSet(coor, 30);
+    }
+    else
+    {
+      bitSet(coor, 31);         //East
+      bitClear(coor, 30);
+    }
+
+    lh.longValue = coor;
+  }
 
   if(applID == 0)
   {
