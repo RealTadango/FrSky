@@ -412,7 +412,7 @@ local function drawGraph()
 	lcd.drawText(5, 130, cursorTime, CUSTOM_COLOR)
 
 	--Draw session view locations
-	local viewScale = valPos / 480
+	local viewScale = valPos / 479
 	local viewStart = math.floor(graphStart / viewScale)
 	local viewEnd = math.floor((graphStart + graphSize) / viewScale)
 
@@ -421,7 +421,7 @@ local function drawGraph()
 	lcd.drawLine(viewStart, 269, viewEnd, 269, SOLID, CUSTOM_COLOR)
 	lcd.drawLine(viewStart, 270, viewEnd, 270, SOLID, CUSTOM_COLOR)
 	lcd.drawLine(viewStart, 271, viewEnd, 271, SOLID, CUSTOM_COLOR)
-
+	
 	for varIndex = 2, 5, 1 do
 		if dataSelection[varIndex].value ~= 0 then
 			local points = points[varIndex - 1]
