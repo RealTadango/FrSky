@@ -14,16 +14,12 @@ local options = {
 
 function create(zone, options)
 	local context = { zone=zone, options=options }
+	imageFile = "/WIDGETS/Gauge/g" .. context.zone.h .. ".png"
+	context.back = Bitmap.open(imageFile)
 	return context
 end
 
 function drawGauge(context)
-	
-	if context.back == nil then
-		imageFile = "/WIDGETS/Gauge/g" .. context.zone.h .. ".png"
-		context.back = Bitmap.open(imageFile)
-	end
-
 	lcd.drawBitmap(context.back, context.zone.x, context.zone.y)
 
 	--value = 550
@@ -62,11 +58,6 @@ function drawGauge(context)
 		y2 = yt
 	end
 
-	print("X1: " .. x1)
-	print("Y1: " .. y1)
-	print("X2: " .. x2)
-	print("Y2: " .. y2)
-
 	lcd.setColor(CUSTOM_COLOR, lcd.RGB(255,255,255))
 	lcd.drawLine(x1, y1, x2, y2, SOLID, CUSTOM_COLOR)
 
@@ -89,7 +80,6 @@ end
 
 function update(context, options)
 	context.options = options
-	context.back = nil
 end
 
 function refresh(context)
