@@ -24,7 +24,13 @@
 local outputs = { "RAS" }
 
 local function run()
-  return 10.24*getRAS()
+  local ras = getRAS();
+  
+  if ras then
+    return 10.24*ras
+  else
+	return 0
+  end
 end
 
 return { run=run, output=outputs }
