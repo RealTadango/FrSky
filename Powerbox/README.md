@@ -17,5 +17,6 @@ When a GPS is attached to the powerbox the following sensors are availalble:
  - GAlt: GPS height
  - Distance to home: Custom sensor with id 0x5110 that shows the distance in meters
  - Distance traveled: Custom sensor with ID 0x5120 that shows the distance traveled in meters (100m precision)
+ - Coordinates in lattitude, longitude
  
 When a sensor is not availalble is it not tranismitted and cannot be discovered.
