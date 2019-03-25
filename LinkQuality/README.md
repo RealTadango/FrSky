@@ -1,4 +1,4 @@
-# Link Qualoty Sensor
+# Link Quality Sensor
 This sensor provides a link quality from S.Bus data.
 
 Folder LinkQualitySensor contains an Arduino sketch for an Arduino Mini. RX port is connected to the S.Bus port of a FrSky receiver through an inverter. RB3 is connected to the S.Port of the X-Series receiver.
