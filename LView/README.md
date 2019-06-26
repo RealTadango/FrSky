@@ -4,6 +4,8 @@
 
 Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/LView/LView.lua
 
+Update 26-06-2019: The amount of days loaded is increased to 600. This causes a longer initial loading time.
+
 Installation:
 Copy LView.lua to any location on the SD card and execute it through the SD browser.
 
@@ -30,7 +32,7 @@ Navigation during the graph:
  - Elevator stick / Joystick Y: Zoom in / out
  - Rudder stick / Joystick X: Scroll left / right
 
-After starting a log file must be selected. The script only shows the log files from the last 100 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is a choice for speed:
+After starting a log file must be selected. The script only shows the log files from the last 600 days for the current model. If you want to view a log from another model you have to select that model first in OpenTX. Below the log file is a choice for speed:
  - Accurate: Reads every line from the logfile to check if a session has ended or started.
  - Fast: This mode reads every 5th line from the logfile. This is faster but you might loose 5 lines in the beginning or end of the session.
  - Use index: If you have read the logfile before, a session index is availabe and the log file is not analysed again. If you have added a new session to a current logfile you must choose one of the other options to index it again.

@@ -498,7 +498,7 @@ local function init()
 	local month = now.mon
 	local day = now.day
 
-	for i = 0, 100, 1 do
+	for i = 0, 600, 1 do
 		local testFilename = name .. "-" .. year .. "-" .. doubleDigits(month) .. "-" .. doubleDigits(day) .. ".csv"
 
 		local file = io.open("/LOGS/" .. testFilename, "r")
