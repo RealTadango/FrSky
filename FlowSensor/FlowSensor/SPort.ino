@@ -112,4 +112,3 @@ void sendByte(byte b)
     sport.write(b);
   }
 }
-
