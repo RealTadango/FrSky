@@ -6,14 +6,19 @@
 #define SPORT_HEADER_DATA 0x10
 #define SPORT_HEADER_DISCARD 0x00
 
-#define SENSOR_SIZE 10
+#define MAX_SENSOR_COUNT 10
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
+typedef union {
+    char byteValue[4];
+    long longValue;
+} longHelper;
+
 struct sensorData {
-    bool hasData;
     long value;
+    int sensorId;
 };
 
 class SPortSensor{
@@ -25,32 +30,36 @@ class SPortSensor{
         sensorData (*getData)(void);
 };
 
-struct sensorRegistration {
-    int id;
-    SPortSensor *sensor; 
-};
-
 class SPortHub{
     public:
-//        SPortHub(Serial_& serial);
+#ifdef Serial_
+        SPortHub(Serial_& serial);
+#else
         SPortHub(HardwareSerial& serial);
+#endif
         SPortHub(int softwarePin);
         void begin();
         void handle();
         void registerSensor(SPortSensor& sensor);
     private:
         void SendData(sensorData data);
-//        Serial_* hwStream;
-        HardwareSerial* hwStream2;
-        SoftwareSerial* swStream;
+        void SendByte(byte b);
+        byte GetChecksum(byte data[], int start, int len);
+
+#ifdef Serial_
+        Serial_* _hwStream;
+#else
+        HardwareSerial* _hwStream;
+#endif
+        SoftwareSerial* _swStream;
+        Stream* _stream;
         int _softwarePin;
-        Stream* stream;
-        bool valid;
-        short index;
-        byte buffer[25];
-        byte prevValue;
-        bool inFrame;
-        sensorRegistration sensors[SENSOR_SIZE];
+        bool _valid;
+        short _index;
+        byte _buffer[25];
+        // byte prevValue;
+        // bool inFrame;
+        SPortSensor *_sensors[MAX_SENSOR_COUNT];
 };
 
 #endif

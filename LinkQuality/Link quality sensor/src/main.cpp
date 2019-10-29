@@ -1,13 +1,15 @@
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include "SPort.h"
 
-SPortHub hub(3);
-// SPortHub hub(Serial);
+#define PHYSICAL_ID 0x12
+#define SPORT_PIN 3
+
+SPortHub hub(SPORT_PIN); //Software serial, single pin
+// SPortHub hub(Serial); //Hardware serial (needs hardware inverter)
 
 sensorData sensorCallback();
 
-SPortSensor sensor(12, sensorCallback);
+SPortSensor sensor(PHYSICAL_ID, sensorCallback);
 
 void setup() {
     hub.registerSensor(sensor);
@@ -19,7 +21,8 @@ void loop() {
 }
 
 sensorData sensorCallback() {
-    sensorData answer = { true, 123 };
-
+    sensorData answer;
+    answer.value = 123;
+    answer.sensorId = 0x5299;
     return answer;
 }
