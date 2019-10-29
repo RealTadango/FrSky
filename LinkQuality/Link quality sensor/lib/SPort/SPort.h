@@ -1,27 +1,56 @@
 #ifndef SPORT_H
 #define SPORT_H
 
+#define SPORT_BAUD 57600
+#define SPORT_START 0x7E
+#define SPORT_HEADER_DATA 0x10
+#define SPORT_HEADER_DISCARD 0x00
+
+#define SENSOR_SIZE 10
+
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-class SPortHubWHS{
-    public:
-        SPortHubWHS(Serial_ &serial);
-        void begin();
-
-    private:
-        Serial_ _serial;
+struct sensorData {
+    bool hasData;
+    long value;
 };
 
-class SPortHubSS{
+class SPortSensor{
     public:
-        SPortHubSS(SoftwareSerial &serial);
-        void begin();
-
+        SPortSensor(int id, sensorData (*pCallback)(void));
+        sensorData getValue();
+        int id;
     private:
-        SoftwareSerial _serial;
+        sensorData (*getData)(void);
 };
 
+struct sensorRegistration {
+    int id;
+    SPortSensor *sensor; 
+};
 
+class SPortHub{
+    public:
+//        SPortHub(Serial_& serial);
+        SPortHub(HardwareSerial& serial);
+        SPortHub(int softwarePin);
+        void begin();
+        void handle();
+        void registerSensor(SPortSensor& sensor);
+    private:
+        void SendData(sensorData data);
+//        Serial_* hwStream;
+        HardwareSerial* hwStream2;
+        SoftwareSerial* swStream;
+        int _softwarePin;
+        Stream* stream;
+        bool valid;
+        short index;
+        byte buffer[25];
+        byte prevValue;
+        bool inFrame;
+        sensorRegistration sensors[SENSOR_SIZE];
+};
 
 #endif
