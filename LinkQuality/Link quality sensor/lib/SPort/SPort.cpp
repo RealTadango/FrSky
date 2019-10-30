@@ -3,21 +3,27 @@
 #include "SPort.h"
 
 #ifdef Serial_
-SPortHub::SPortHub(Serial_& serial) {
+SPortHub::SPortHub(int physicalId, Serial_& serial) {
+    _id = physicalId;
     _hwStream = &serial;
     _stream = &serial;
+    _sensorIndex = 0;
 }
 #else
-SPortHub::SPortHub(HardwareSerial& serial) {
+SPortHub::SPortHub(int physicalId, HardwareSerial& serial) {
+    _id = physicalId;
     _hwStream = &serial;
     _stream = &serial;
+    _sensorIndex = 0;
 }
 #endif
 
-SPortHub::SPortHub(int softwarePin) {
+SPortHub::SPortHub(int physicalId, int softwarePin) {
+    _id = physicalId;
     _swStream = &SoftwareSerial(softwarePin, softwarePin, true);
     _softwarePin = softwarePin;
     _stream = _swStream;
+    _sensorIndex = 0;
 }
 
 void SPortHub::begin() {
@@ -37,14 +43,20 @@ void SPortHub::handle() {
             _index = 0;
         } else if(_index == 1) {
             int physicalID = newByte & 0x1F;
-
-            for(int i = 0; i < MAX_SENSOR_COUNT; i++)
-            {
-                if(_sensors[i] != 0 && _sensors[i]->id == physicalID){
-                    sensorData data = _sensors[i]->getValue();
-                    SendData(data);
-                    break;
+            
+            if(_id == physicalID) {
+              if(_sensors[_sensorIndex] != 0) {
+                sensorData data = _sensors[_sensorIndex]->getData();
+                SendData(data);
+                if(_sensors[_sensorIndex]->valueSend) {
+                  _sensors[_sensorIndex]->valueSend();
                 }
+              }
+
+              _sensorIndex++;
+              if (_sensorIndex >= MAX_SENSOR_COUNT) {
+                _sensorIndex = 0;
+              }
             }
         }
 
@@ -66,20 +78,10 @@ void SPortHub::registerSensor(SPortSensor& sensor) {
     }
 }
 
-SPortSensor::SPortSensor(int sensorId, sensorData (*getValueFunc)(void)) {
-    id = sensorId;
-    getData = getValueFunc;
-}
-
-sensorData SPortSensor::getValue() {
-    return getData();
-}
-
 void SPortHub::SendData(sensorData data) {
     if(_swStream) {
         pinMode(_softwarePin, OUTPUT);
         delay(1);
-
     }
 
     byte frame[8];
@@ -177,4 +179,24 @@ void SPortHub::SendByte(byte b)
   {
     _stream->write(b);
   }
+}
+
+CustomSPortSensor::CustomSPortSensor(sensorData (*callback)(CustomSPortSensor*)) {
+  _callback = callback;
+}
+
+sensorData CustomSPortSensor::getData() {
+  return _callback(this);
+}
+
+SimpleSPortSensor::SimpleSPortSensor(int id) {
+  _id = id;
+  value = 0;
+}
+
+sensorData SimpleSPortSensor::getData() {
+    sensorData data;
+    data.sensorId = _id;
+    data.value = value;
+    return data;
 }

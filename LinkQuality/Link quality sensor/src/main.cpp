@@ -2,27 +2,45 @@
 #include "SPort.h"
 
 #define PHYSICAL_ID 0x12
+#define SENSOR_ID1 0x5100
+#define SENSOR_ID2 0x5101
+#define SENSOR_ID3 0x5102
 #define SPORT_PIN 3
 
-SPortHub hub(SPORT_PIN); //Software serial, single pin
-// SPortHub hub(Serial); //Hardware serial (needs hardware inverter)
+void increase(); //Declare function
+sensorData getData(CustomSPortSensor* sensor); //Declare function
 
-sensorData sensorCallback();
-
-SPortSensor sensor(PHYSICAL_ID, sensorCallback);
+SPortHub hub(PHYSICAL_ID, SPORT_PIN); //Software serial, single pin
+SimpleSPortSensor simpleSensor(SENSOR_ID1);
+SimpleSPortSensor simpleSensor2(SENSOR_ID2);
+CustomSPortSensor complexSensor(getData);
 
 void setup() {
-    hub.registerSensor(sensor);
+    hub.registerSensor(simpleSensor);
+
+    simpleSensor2.valueSend = increase;
+    hub.registerSensor(simpleSensor2);
+
+    hub.registerSensor(complexSensor);
+
     hub.begin();
 }
 
 void loop() {
+    simpleSensor.value = 42;
     hub.handle();
 }
 
-sensorData sensorCallback() {
-    sensorData answer;
-    answer.value = 123;
-    answer.sensorId = 0x5299;
-    return answer;
+void increase() { //Implement function
+    simpleSensor2.value++;
+    if(simpleSensor2.value >= 100) {
+        simpleSensor2.value = 0;
+    }
+}
+
+sensorData getData(CustomSPortSensor* sensor) {
+    sensorData result;
+    result.sensorId = SENSOR_ID3;
+    result.value = 1234;
+    return result;
 }
