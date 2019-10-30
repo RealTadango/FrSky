@@ -1,46 +1,38 @@
 #include <Arduino.h>
 #include "SPort.h"
 
+#define COMMAND_ID 0x1B
 #define PHYSICAL_ID 0x12
-#define SENSOR_ID1 0x5100
-#define SENSOR_ID2 0x5101
-#define SENSOR_ID3 0x5102
+#define SENSOR_ID 0x5100
 #define SPORT_PIN 3
 
-void increase(); //Declare function
-sensorData getData(CustomSPortSensor* sensor); //Declare function
+SPortHub hub(PHYSICAL_ID, SPORT_PIN);
+SimpleSPortSensor simpleSensor(SENSOR_ID);
 
-SPortHub hub(PHYSICAL_ID, SPORT_PIN); //Software serial, single pin
-SimpleSPortSensor simpleSensor(SENSOR_ID1);
-SimpleSPortSensor simpleSensor2(SENSOR_ID2);
-CustomSPortSensor complexSensor(getData);
+void commandReceived(int prim, int applicationId, int value);
 
 void setup() {
+    Serial.begin(115200);
+
+    hub.commandId = COMMAND_ID;
+    hub.commandReceived = commandReceived;
     hub.registerSensor(simpleSensor);
-
-    simpleSensor2.valueSend = increase;
-    hub.registerSensor(simpleSensor2);
-
-    hub.registerSensor(complexSensor);
-
     hub.begin();
+
+    pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
-    simpleSensor.value = 42;
     hub.handle();
 }
 
-void increase() { //Implement function
-    simpleSensor2.value++;
-    if(simpleSensor2.value >= 100) {
-        simpleSensor2.value = 0;
-    }
-}
+void commandReceived(int prim, int applicationId, int value) {
+    Serial.print("PRIM: ");
+    Serial.print(prim, HEX);
+    Serial.print(", applicationId: ");
+    Serial.print(applicationId, HEX);
+    Serial.print(", value: ");
+    Serial.println(value, HEX);
 
-sensorData getData(CustomSPortSensor* sensor) {
-    sensorData result;
-    result.sensorId = SENSOR_ID3;
-    result.value = 1234;
-    return result;
+    analogWrite(LED_BUILTIN, value);
 }

@@ -3,10 +3,8 @@
 
     #define SPORT_BAUD 57600
     #define SPORT_START 0x7E
-    #define SPORT_HEADER_DATA 0x10
     #define SPORT_HEADER_DISCARD 0x00
-
-    #define MAX_SENSOR_COUNT 10
+    #define SPORT_HEADER_DATA 0x10
 
     #include <Arduino.h>
     #include <SoftwareSerial.h>
@@ -55,6 +53,8 @@
             void begin();
             void handle();
             void registerSensor(SPortSensor& sensor);
+            void (*commandReceived)(int prim, int applicationId, int value);
+            int commandId;
         private:
             void SendData(sensorData data);
             void SendByte(byte b);
@@ -66,15 +66,15 @@
     #else
             HardwareSerial* _hwStream;
     #endif
-            int _id;
             SoftwareSerial* _swStream;
-            Stream* _stream;
+            SPortSensor** _sensors;
+            int _sensorCount;
+            int _sensorIndex;
+            int _physicalId;
             int _softwarePin;
             bool _valid;
             short _index;
-            byte _buffer[25];
-            SPortSensor *_sensors[MAX_SENSOR_COUNT];
-            int _sensorIndex;
+            byte _buffer[10];
     };
 
 #endif

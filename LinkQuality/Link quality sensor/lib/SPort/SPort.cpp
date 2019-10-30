@@ -3,86 +3,102 @@
 #include "SPort.h"
 
 #ifdef Serial_
-SPortHub::SPortHub(int physicalId, Serial_& serial) {
-    _id = physicalId;
-    _hwStream = &serial;
-    _stream = &serial;
-    _sensorIndex = 0;
+SPortHub::SPortHub(int physicalId, Serial_& serial):
+  _physicalId(physicalId),
+  _hwStream(&serial),
+  _sensorIndex(0) {
 }
 #else
-SPortHub::SPortHub(int physicalId, HardwareSerial& serial) {
-    _id = physicalId;
-    _hwStream = &serial;
-    _stream = &serial;
-    _sensorIndex = 0;
+SPortHub::SPortHub(int physicalId, HardwareSerial& serial):
+  _physicalId(physicalId),
+  _hwStream(&serial),
+  _sensorIndex(0) {
 }
 #endif
 
-SPortHub::SPortHub(int physicalId, int softwarePin) {
-    _id = physicalId;
-    _swStream = &SoftwareSerial(softwarePin, softwarePin, true);
-    _softwarePin = softwarePin;
-    _stream = _swStream;
-    _sensorIndex = 0;
+SPortHub::SPortHub(int physicalId, int softwarePin):
+  _physicalId(physicalId),
+  _softwarePin(softwarePin),
+  _sensorIndex(0) {
+    _swStream = new SoftwareSerial(_softwarePin, _softwarePin, true);
 }
 
 void SPortHub::begin() {
     if(_hwStream) {
-        _hwStream->begin(SPORT_BAUD, SERIAL_8E2);
-    } else if(_swStream) {
-        _swStream->begin(SPORT_BAUD);
+      _hwStream->begin(SPORT_BAUD, SERIAL_8E2);
+    } else {
+      _swStream->begin(SPORT_BAUD);
     }
 }
 
 void SPortHub::SendSensor() {
-  SPortSensor *sensor = _sensors[_sensorIndex];
-
-  if(sensor) {
-    sensorData data = sensor->getData();
-    SendData(data);
-    if(sensor->valueSend) {
-      sensor->valueSend();
-    }
-
-    _sensorIndex++;
-    if (_sensorIndex >= MAX_SENSOR_COUNT) {
-      _sensorIndex = 0;
-    }
-  } else {
+  if (_sensorIndex >= _sensorCount) {
     _sensorIndex = 0;
+  } 
+
+  SPortSensor *sensor = _sensors[_sensorIndex];
+  sensorData data = sensor->getData();
+  SendData(data);
+  if(sensor->valueSend) {
+    sensor->valueSend();
   }
+
+  _sensorIndex++;
 }
 
 void SPortHub::handle() {
-    while(_stream->available()) {
-        byte newByte = _stream->read();
+    Stream* stream = _hwStream ? (Stream*)_hwStream : (Stream*)_swStream;
+
+    while(stream->available() > 0) {
+        byte newByte = stream->read();
 
         if(newByte == SPORT_START) {
-            _valid = true;
-            _index = 0;
-        } else if(_index == 1) {
-            int physicalID = newByte & 0x1F;
-            
-            if(_id == physicalID) {
-              SendSensor();
-              _valid = false;
-            }
+          _valid = true;
+          _index = 0;
+        } else if(_valid && _index == 1) {
+          //Check if the frame / request is for us
+          int physicalID = newByte & 0x1F;
+
+          if(_physicalId == physicalID && stream->available() == 0) {
+            SendSensor();
+            _valid = false;
+          } else if(commandId != physicalID) {
+            //Other ID or to late
+            _valid = false;
+          }
         }
 
         if(_valid) {
-            _buffer[_index] = newByte;
-            _index++;
+          _buffer[_index] = newByte;
+          _index++;
+
+          if(_index >= 10)
+          {
+            _sensorIndex = 0;
+            _valid = false;
+            if(commandReceived) {
+              int applicationId = _buffer[3] + (_buffer[4] * 256);
+              longHelper lh;
+              lh.byteValue[0] = _buffer[5];
+              lh.byteValue[1] = _buffer[6];
+              lh.byteValue[2] = _buffer[7];
+              lh.byteValue[3] = _buffer[8];
+              commandReceived(_buffer[2], applicationId, lh.longValue);
+            }
+          }
         }
     }
 }
 
 void SPortHub::registerSensor(SPortSensor& sensor) {
-    for(int i = 0; i < MAX_SENSOR_COUNT; i++) {
-        if(_sensors[i] == 0) {
-            _sensors[i] = &sensor;
-            break;
-        }
+    SPortSensor** newSensors = new SPortSensor*[_sensorCount + 1];
+
+    for(int i = 0; i < _sensorCount; i++) {
+      newSensors[i] = _sensors[i];
     }
+    newSensors[_sensorCount] = &sensor;
+    _sensors = newSensors;
+    _sensorCount++;
 }
 
 void SPortHub::SendData(sensorData data) {
@@ -153,14 +169,16 @@ byte SPortHub::GetChecksum(byte data[], int start, int len) {
 
 //Send a data byte the FrSky way
 void SPortHub::SendByte(byte b) {
+  Stream* stream = _hwStream ? (Stream*)_hwStream : (Stream*)_swStream;
+
   if(b == 0x7E) {
-    _stream->write(0x7D);
-    _stream->write(0x5E);
+    stream->write(0x7D);
+    stream->write(0x5E);
   } else if(b == 0x7D) {
-    _stream->write(0x7D);
-    _stream->write(0x5D);
+    stream->write(0x7D);
+    stream->write(0x5D);
   } else {
-    _stream->write(b);
+    stream->write(b);
   }
 }
 
