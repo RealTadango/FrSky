@@ -34,6 +34,25 @@ void SPortHub::begin() {
     }
 }
 
+void SPortHub::SendSensor() {
+  SPortSensor *sensor = _sensors[_sensorIndex];
+
+  if(sensor) {
+    sensorData data = sensor->getData();
+    SendData(data);
+    if(sensor->valueSend) {
+      sensor->valueSend();
+    }
+
+    _sensorIndex++;
+    if (_sensorIndex >= MAX_SENSOR_COUNT) {
+      _sensorIndex = 0;
+    }
+  } else {
+    _sensorIndex = 0;
+  }
+}
+
 void SPortHub::handle() {
     while(_stream->available()) {
         byte newByte = _stream->read();
@@ -45,23 +64,12 @@ void SPortHub::handle() {
             int physicalID = newByte & 0x1F;
             
             if(_id == physicalID) {
-              if(_sensors[_sensorIndex] != 0) {
-                sensorData data = _sensors[_sensorIndex]->getData();
-                SendData(data);
-                if(_sensors[_sensorIndex]->valueSend) {
-                  _sensors[_sensorIndex]->valueSend();
-                }
-              }
-
-              _sensorIndex++;
-              if (_sensorIndex >= MAX_SENSOR_COUNT) {
-                _sensorIndex = 0;
-              }
+              SendSensor();
+              _valid = false;
             }
         }
 
-        if(_valid)
-        {
+        if(_valid) {
             _buffer[_index] = newByte;
             _index++;
         }
@@ -69,9 +77,8 @@ void SPortHub::handle() {
 }
 
 void SPortHub::registerSensor(SPortSensor& sensor) {
-    for(int i = 0; i < MAX_SENSOR_COUNT; i++)
-    {
-        if(_sensors[i] == 0){
+    for(int i = 0; i < MAX_SENSOR_COUNT; i++) {
+        if(_sensors[i] == 0) {
             _sensors[i] = &sensor;
             break;
         }
@@ -96,9 +103,7 @@ void SPortHub::SendData(sensorData data) {
         frame[4] = lh.byteValue[1];
         frame[5] = lh.byteValue[2];
         frame[6] = lh.byteValue[3];
-    }
-    else
-    {
+    } else {
         frame[0] = SPORT_HEADER_DISCARD;    
         frame[1] = 0;
         frame[2] = 0;
@@ -111,8 +116,7 @@ void SPortHub::SendData(sensorData data) {
     frame[7] = GetChecksum(frame, 0, 7);
 
     //Send the frame
-    for(short i = 0; i < 8; i++)
-    {
+    for(short i = 0; i < 8; i++) {
         SendByte(frame[i]);
     }
 
@@ -121,41 +125,26 @@ void SPortHub::SendData(sensorData data) {
     }
 }
 
-byte SPortHub::GetChecksum(byte data[], int start, int len)
-{
+byte SPortHub::GetChecksum(byte data[], int start, int len) {
   long total = 0;
 
-  for(int i = start; i < (start + len); i++)
-  {
+  for(int i = start; i < (start + len); i++) {
     total += data[i];
   }
 
-  if(total >= 0x700)
-  {
+  if(total >= 0x700) {
     total+= 7;
-  }
-  else if(total >= 0x600)
-  {
+  } else if(total >= 0x600) {
     total+= 6;
-  }
-  else if(total >= 0x500)
-  {
+  } else if(total >= 0x500) {
     total+= 5;
-  }
-  else if(total >= 0x400)
-  {
+  } else if(total >= 0x400) {
     total+= 4;
-  }
-  else if(total >= 0x300)
-  {
+  } else if(total >= 0x300) {
     total+= 3;
-  }
-  else if(total >= 0x200)
-  {
+  } else if(total >= 0x200) {
     total+= 2;
-  }
-  else if(total >= 0x100)
-  {
+  } else if(total >= 0x100) {
     total++;
   }
 
@@ -163,20 +152,14 @@ byte SPortHub::GetChecksum(byte data[], int start, int len)
 }
 
 //Send a data byte the FrSky way
-void SPortHub::SendByte(byte b)
-{
-  if(b == 0x7E)
-  {
+void SPortHub::SendByte(byte b) {
+  if(b == 0x7E) {
     _stream->write(0x7D);
     _stream->write(0x5E);
-  }
-  else if(b == 0x7D)
-  {
+  } else if(b == 0x7D) {
     _stream->write(0x7D);
     _stream->write(0x5D);
-  }
-  else
-  {
+  } else {
     _stream->write(b);
   }
 }

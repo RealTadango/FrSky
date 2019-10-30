@@ -58,6 +58,7 @@
         private:
             void SendData(sensorData data);
             void SendByte(byte b);
+            void SendSensor();
             byte GetChecksum(byte data[], int start, int len);
 
     #ifdef Serial_
