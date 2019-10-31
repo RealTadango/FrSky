@@ -14,29 +14,29 @@
         long longValue;
     } longHelper;
 
-    struct sensorData {
+    struct sportData {
         long value;
-        int sensorId;
+        int applicationId;
     };
 
     class SPortSensor {
         public:
             void (*valueSend)(void);
-            virtual sensorData getData () = 0;
+            virtual sportData getData () = 0;
     };
 
     class CustomSPortSensor : public SPortSensor {
         public:
-            CustomSPortSensor(sensorData (*callback)(CustomSPortSensor*));
-            virtual sensorData getData ();
+            CustomSPortSensor(sportData (*callback)(CustomSPortSensor*));
+            virtual sportData getData ();
         private:
-            sensorData (*_callback)(CustomSPortSensor*);
+            sportData (*_callback)(CustomSPortSensor*);
     };
 
     class SimpleSPortSensor : public SPortSensor {
         public: 
             SimpleSPortSensor(int id);
-            virtual sensorData getData ();
+            virtual sportData getData ();
             long value;
         private:
             int _id;
@@ -53,12 +53,14 @@
             void begin();
             void handle();
             void registerSensor(SPortSensor& sensor);
+            void sendCommand(int prim, int applicationId, int value);
             void (*commandReceived)(int prim, int applicationId, int value);
             int commandId;
         private:
-            void SendData(sensorData data);
+            void SendData(sportData data, int prim);
             void SendByte(byte b);
-            void SendSensor();
+            bool SendCommand();
+            bool SendSensor();
             byte GetChecksum(byte data[], int start, int len);
 
     #ifdef Serial_
@@ -75,6 +77,8 @@
             bool _valid;
             short _index;
             byte _buffer[10];
+            int _commandPrim;
+            sportData _commandData;
     };
 
 #endif

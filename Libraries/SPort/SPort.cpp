@@ -31,19 +31,42 @@ void SPortHub::begin() {
     }
 }
 
-void SPortHub::SendSensor() {
+bool SPortHub::SendCommand() {
+  if(_commandPrim > 0) {
+    SendData(_commandData, _commandPrim);
+    _commandPrim = 0;
+    return true;
+  }
+
+  return false;
+}
+
+bool SPortHub::SendSensor() {
+  if(_sensorCount == 0) {
+    return false;
+  }
+
+  //Start again with the first sensor
   if (_sensorIndex >= _sensorCount) {
     _sensorIndex = 0;
   } 
 
   SPortSensor *sensor = _sensors[_sensorIndex];
-  sensorData data = sensor->getData();
-  SendData(data);
-  if(sensor->valueSend) {
-    sensor->valueSend();
+  sportData data = sensor->getData();
+
+  if(data.applicationId > 0)
+  {
+    SendData(data, SPORT_HEADER_DATA);
+    
+    if(sensor->valueSend) {
+      sensor->valueSend();
+    }
+  } else {
+    SendData(data, SPORT_HEADER_DISCARD);
   }
 
   _sensorIndex++;
+  return true;
 }
 
 void SPortHub::handle() {
@@ -60,8 +83,9 @@ void SPortHub::handle() {
           int physicalID = newByte & 0x1F;
 
           if(_physicalId == physicalID && stream->available() == 0) {
-            SendSensor();
-            _valid = false;
+            if(!SendCommand()) {
+              _valid = !SendSensor();
+            }
           } else if(commandId != physicalID) {
             //Other ID or to late
             _valid = false;
@@ -74,7 +98,6 @@ void SPortHub::handle() {
 
           if(_index >= 10)
           {
-            _sensorIndex = 0;
             _valid = false;
             if(commandReceived) {
               int applicationId = _buffer[3] + (_buffer[4] * 256);
@@ -101,34 +124,30 @@ void SPortHub::registerSensor(SPortSensor& sensor) {
     _sensorCount++;
 }
 
-void SPortHub::SendData(sensorData data) {
+void SPortHub::sendCommand(int prim, int applicationId, int value)
+{
+  _commandPrim = prim;
+  _commandData.applicationId = applicationId;
+  _commandData.value = value;
+}
+
+void SPortHub::SendData(sportData data, int prim) {
     if(_swStream) {
         pinMode(_softwarePin, OUTPUT);
         delay(1);
     }
 
+    longHelper lh;
+    lh.longValue = data.value;
+
     byte frame[8];
-
-    if(data.sensorId > 0) {
-        longHelper lh;
-        lh.longValue = data.value;
-        frame[0] = SPORT_HEADER_DATA;    
-        frame[1] = lowByte(data.sensorId);
-        frame[2] = highByte(data.sensorId);
-        frame[3] = lh.byteValue[0];
-        frame[4] = lh.byteValue[1];
-        frame[5] = lh.byteValue[2];
-        frame[6] = lh.byteValue[3];
-    } else {
-        frame[0] = SPORT_HEADER_DISCARD;    
-        frame[1] = 0;
-        frame[2] = 0;
-        frame[3] = 0;
-        frame[4] = 0;
-        frame[5] = 0;
-        frame[6] = 0;
-    }
-
+    frame[0] = prim;    
+    frame[1] = lowByte(data.applicationId);
+    frame[2] = highByte(data.applicationId);
+    frame[3] = lh.byteValue[0];
+    frame[4] = lh.byteValue[1];
+    frame[5] = lh.byteValue[2];
+    frame[6] = lh.byteValue[3];
     frame[7] = GetChecksum(frame, 0, 7);
 
     //Send the frame
@@ -182,11 +201,11 @@ void SPortHub::SendByte(byte b) {
   }
 }
 
-CustomSPortSensor::CustomSPortSensor(sensorData (*callback)(CustomSPortSensor*)) {
+CustomSPortSensor::CustomSPortSensor(sportData (*callback)(CustomSPortSensor*)) {
   _callback = callback;
 }
 
-sensorData CustomSPortSensor::getData() {
+sportData CustomSPortSensor::getData() {
   return _callback(this);
 }
 
@@ -195,9 +214,9 @@ SimpleSPortSensor::SimpleSPortSensor(int id) {
   value = 0;
 }
 
-sensorData SimpleSPortSensor::getData() {
-    sensorData data;
-    data.sensorId = _id;
+sportData SimpleSPortSensor::getData() {
+    sportData data;
+    data.applicationId = _id;
     data.value = value;
     return data;
 }
