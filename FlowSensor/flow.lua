@@ -1,10 +1,10 @@
-local pulses = 533
-local tanksize = 1000
+local pulses = 0
+local tanksize = 0
 local selected = 0
 
 local function init()
 	--request config data from sensor
-  	sportTelemetryPush(0x1B, 0x31, 0x5290, 0x0)
+  	sportTelemetryPush(0x1B, 0x30, 0x5200, 0x01)
 end
 
 local function run(event)
@@ -19,9 +19,9 @@ local function run(event)
 		--todo
 	elseif event == EVT_ENTER_LONG or event == EVT_TELEM_FIRST then
 		if selected == 0 then
-			sportTelemetryPush(0x1B, 0x32, 0x5290, pulses)
+			sportTelemetryPush(0x1B, 0x31, 0x5200, pulses)
 		elseif selected == 1 then
-			sportTelemetryPush(0x1B, 0x32, 0x5291, tanksize)
+			sportTelemetryPush(0x1B, 0x31, 0x5201, tanksize)
 		end
 	elseif event == EVT_PAGE_BREAK or event == EVT_PAGEDN_FIRST  then
 		selected = 1
@@ -44,9 +44,11 @@ local function run(event)
 	local physicalId, primId, dataId, value = sportTelemetryPop()  
 	
 	while physicalId ~= nil do
-		if dataId == 0x5000 then
+		if dataId == 0x5200 then
 			pulses = value
-		elseif dataId == 0x5001 then
+		  	sportTelemetryPush(0x1B, 0x30, 0x5201, 0x02)
+
+		elseif dataId == 0x5201 then
 			tanksize = value
 		end
 
