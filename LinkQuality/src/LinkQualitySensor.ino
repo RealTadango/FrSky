@@ -1,5 +1,4 @@
-#include <Arduino.h>
-#include "SPort.h"
+#include <SPort.h>
 
 #define SBUS_BAUD 100000
 #define SBUS_THRESHOLD 5
@@ -20,9 +19,6 @@ bool sbusInFrame = false;
 
 bool lastFrameLossesBuffer[FRAMELOSS_BUFFER];
 int lastFrameLossesIndex = 0;
-
-//Function declaration
-void handleSBusFrame();
 
 void setup() {
     Serial.begin(SBUS_BAUD, SERIAL_8E2);
