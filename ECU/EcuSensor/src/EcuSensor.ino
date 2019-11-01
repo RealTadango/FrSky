@@ -1,62 +1,128 @@
-#define ESC 0x1B
+#include <Sport.h>
 
-//Current index for receiving display byte
-short ecu_index = 0;
+#define ECU_JETRONIC
+// #define ECU_FADEC
 
-//Previous value
-byte ecu_prev;
+#define SPORT_PIN 3
+#define SPORT_PHYSICAL_ID 0x10
+#define SPORT_COMMAND_ID 0x1B
 
-//Repeat the enter key
+#define SPORT_APPL_ID_TERMINAL 0x5000  
+#define SPORT_APPL_ID_EGT 0x0400  
+#define SPORT_APPL_ID_RPM 0x0500  
 
-//Byte received is valid for ECU display
-bool ecu_valid = false;
+sportData getTerminalData(CustomSPortSensor* sensor);
+void commandReceived(int prim, int applicationId, int value);
+void NewValueEcu(byte newByte);
 
-void getTerminalFrame(byte data[])
-{
-  for(short pos = 0; pos <= 7; pos++)
+SPortHub hub(SPORT_PHYSICAL_ID, SPORT_PIN);
+SimpleSPortSensor sensorEGT(SPORT_APPL_ID_EGT);
+SimpleSPortSensor sensorRPM(SPORT_APPL_ID_RPM);
+CustomSPortSensor terminalSensor(getTerminalData);
+
+//Ecu terminal data
+bool terminalMode = false;
+byte terminalKey = 0;
+byte terminalSentDisplay[32]; 
+byte terminalDisplay[32]; //Sent display values to compare
+
+short ecuIndex = 0; //Current index for receiving display byte
+byte ecuPrev; //Previous value
+bool ecuValid = false; //Byte received is valid for ECU display
+
+
+void setup() {
+  hub.commandReceived = commandReceived;
+  hub.commandId = SPORT_COMMAND_ID;
+  hub.registerSensor(sensorEGT);
+  hub.registerSensor(sensorRPM);
+  hub.registerSensor(terminalSensor);
+  hub.begin();
+
+#if defined(ECU_JETRONIC)
+  Serial.begin(9600);
+#else if definec(ECU_FADEC)
+  Serial.begin(4800);
+#endif
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+}
+
+void loop() {
+  hub.handle();
+
+  //Ecu handling
+  while(Serial.available())
   {
+    byte val = Serial.read();
+
+    //Pass it to the handler
+    NewValueEcu(val);
+  }
+}
+
+sportData getTerminalData(CustomSPortSensor* sensor) {
+  sportData data;
+
+  for(short pos = 0; pos <= 7; pos++) {
     //Check if this part of the display has changed
-    if(display[pos * 4] != sent_display[pos * 4]
-      || display[(pos * 4)+1] != sent_display[(pos * 4)+1]
-      || display[(pos * 4)+2] != sent_display[(pos * 4)+2]
-      || display[(pos * 4)+3] != sent_display[(pos * 4)+3])
+    if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
+      || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
+      || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
+      || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
     {
       //Update the sent display
-      sent_display[pos * 4] = display[pos * 4];
-      sent_display[(pos * 4)+1] = display[(pos * 4)+1];
-      sent_display[(pos * 4)+2] = display[(pos * 4)+2];
-      sent_display[(pos * 4)+3] = display[(pos * 4)+3];
+      terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
+      terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
+      terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
+      terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
 
-      int applID = SENSOR_APPL_ID_TERMINAL + pos;
+      data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
 
       //Prepare the S.Port data
-      data[0] = SPORT_HEADER_DATA;
-      data[1] = lowByte(applID);
-      data[2] = highByte(applID);
-      data[3] = display[pos * 4];
-      data[4] = display[(pos * 4)+1];
-      data[5] = display[(pos * 4)+2];
-      data[6] = display[(pos * 4)+3];
+      longHelper lh;
 
-      return;
+      lh.byteValue[0] = terminalDisplay[pos * 4];
+      lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
+      lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
+      lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
+
+      data.value = lh.longValue;
     }
   }
 
-  //Nothing to send, discard the frame
-  data[0] = SPORT_HEADER_DISCARD;
-  data[1] = 0x00;
-  data[2] = 0x00;
-  data[3] = 0x00;
-  data[4] = 0x00;
-  data[5] = 0x00;
-  data[6] = 0x00;
+  return data;
+}
+
+void commandReceived(int prim, int applicationId, int value) {
+  //Skip new command if old command has to be confirmed first
+  
+  if(applicationId == SPORT_APPL_ID_TERMINAL && prim == 0x31) { //ECU Terminal command
+    if(value == 0x10) {
+      //Enable terminal mode
+      terminalMode = true;
+
+      //Reset display buffer
+      for(int i = 0; i <= 31; i++) {
+        terminalSentDisplay[i] = (char)' ';
+      }
+    } else if(value == 0x11) {
+      //Disable terminal mode
+      terminalMode = false;
+    } else if(value >= 0x20) {
+      //Write keyNumber to ECU key buffer
+      terminalKey = value - 0x20;
+    } 
+
+    hub.sendCommand(0x32, applicationId, value); //return confirmation of command reception
+  }
 }
 
 #if defined(ECU_JETRONIC)
 int enterKeyRepeat = 0;
 
-void HandleEvojetFrame()
-{
+void HandleEvojetFrame() {
   //Led on indicates data from ECU
   digitalWrite(LED_BUILTIN, HIGH);
 
@@ -89,18 +155,18 @@ void HandleEvojetFrame()
   else if(display[12] == (int)'s' && display[13] == (int)'p') { status = 0x2C; }
   else if(display[12] == (int)'s' && display[13] == (int)'t') { status = 0x2D; }
 */
-  bcdData[0] = display[5];
-  bcdData[1] = display[4];
-  bcdData[2] = display[3];
+  bcdData[0] = terminalDisplay[5];
+  bcdData[1] = terminalDisplay[4];
+  bcdData[2] = terminalDisplay[3];
 
-  egt = FromBCD(bcdData, 3);
+  sensorEGT.value = FromBCD(bcdData, 3);
 
-  bcdData[0] = display[20];
-  bcdData[1] = display[18];
-  bcdData[2] = display[17];
-  bcdData[3] = display[16];
+  bcdData[0] = terminalDisplay[20];
+  bcdData[1] = terminalDisplay[18];
+  bcdData[2] = terminalDisplay[17];
+  bcdData[3] = terminalDisplay[16];
 
-  rpm = (uint32_t)FromBCD(bcdData, 4) * 100;
+  sensorRPM.value = (uint32_t)FromBCD(bcdData, 4) * 100;
 /*
   if(display[25] == (int)'U')
   {
@@ -123,26 +189,18 @@ void HandleEvojetFrame()
 }
 
 //Get a value from the BCD chars
-int FromBCD(byte bcdData[], int length)
-{
+int FromBCD(byte bcdData[], int length) {
   int result = 0;
 
-  for(int i = 0; i < length; i++)
-  {
-    if(bcdData[i] >= (int)'0' && bcdData[i] <= (int)'9')
-    {
+  for(int i = 0; i < length; i++) {
+    if(bcdData[i] >= (int)'0' && bcdData[i] <= (int)'9') {
       int val = (bcdData[i] - (int)'0');
 
-      if(i == 1)
-      {
+      if(i == 1) {
         val = val * 10;
-      }
-      else if(i == 2)
-      {
+      } else if(i == 2) {
         val = val * 100;
-      }
-      else if(i == 3)
-      {
+      } else if(i == 3) {
         val = val * 1000;
       }
 
@@ -153,39 +211,29 @@ int FromBCD(byte bcdData[], int length)
   return result;
 }
 
-void SendKeyCode()
-{
-  if(key == 0 && enterKeyRepeat == 0)
-  {
+void SendKeyCode() {
+  if(terminalKey == 0 && enterKeyRepeat == 0) {
     return;
   }
   
-  if(key == 1 || key == 2 || enterKeyRepeat > 0)
-  {
-    if(key == 1)
-    {
+  if(terminalKey == 1 || terminalKey == 2 || enterKeyRepeat > 0) {
+    if(terminalKey == 1) {
       enterKeyRepeat = 15;  //Send 15 times the enter key
-    }
-    else if(enterKeyRepeat > 0)
-    {
+    } else if(enterKeyRepeat > 0) {
       enterKeyRepeat--;
     }
 
     //Enter
-    ecu.write(0x7F);
-  }
-  else if(key == 3)
-  {
+    Serial.write(0x7F);
+  } else if(terminalKey == 3) {
     //Up
-    ecu.write(0xBF);
-  }
-  else if(key == 4)
-  {
+    Serial.write(0xBF);
+  } else if(terminalKey == 4) {
     //Down
-    ecu.write(0xDF);
+    Serial.write(0xDF);
   }
 
-  key = 0;
+  terminalKey = 0;
 }
 
 void NewValueEcu(byte newVal)
