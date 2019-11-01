@@ -15,8 +15,8 @@
     } longHelper;
 
     struct sportData {
-        long value;
-        int applicationId;
+        long value = 0;
+        int applicationId = 0;
     };
 
     class SPortSensor {

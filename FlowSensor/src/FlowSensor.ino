@@ -93,10 +93,10 @@ void writeEEPROMValue(int pos, int value) {
 }
 
 int readEEPROMValue(int pos, int value) {
-  if(EEPROM.read(pos * 2) == 255 && EEPROM.read((pos * 2) + 1) == 255) {
+  if(EEPROM.read(pos * 2) == 0xFF && EEPROM.read((pos * 2) + 1) == 0xFF) {
     return value;
   } else {
-    return EEPROM.read(pos * 2) + (EEPROM.read((pos * 2) + 1) * 256);
+    return EEPROM.read(pos * 2) + (EEPROM.read((pos * 2) + 1) * 0x100);
   }
 }
 
