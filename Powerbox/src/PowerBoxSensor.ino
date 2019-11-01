@@ -53,6 +53,8 @@ void setup() {
 }
 
 void loop() {
+  hub.handle();
+  
   //Send address request
   if(micros() > lastTime + TIMEOUT) {
     //Increase address
