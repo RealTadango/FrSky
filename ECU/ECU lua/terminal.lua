@@ -1,6 +1,5 @@
 local ecudisplay = {}
 local cmd = 0x10
-local delay = 0
 local back
 
 local function init()
@@ -8,7 +7,7 @@ local function init()
 		ecudisplay[i] = 0
 	end
 
-	back = Bitmap.open("back.png")
+	back = Bitmap.open("img/back.png")
 	cmd = 0x10
 end
 
@@ -33,15 +32,7 @@ local function run(event)
 	local physicalId, primId, dataId, value = sportTelemetryPop()  
 	
 	while physicalId ~= nil do
-		if primId == 0x32 then
-			delay = 0
-			if cmd == 0x11 then
-				cmd = 0x10
-				setup = true
-				return 2
-			end
-			cmd = 0
-		else
+		if primId ~= 0x32 then
 			pos = dataId - 0x5000
 			b4 = math.floor(value / (256 ^ 3))
 			value = value - b4 * (256 ^ 3)
@@ -71,23 +62,26 @@ local function run(event)
 		line2 = line2 .. string.char(ecudisplay[i])
 	end
 
+	line1 = string.gsub(line1, "ß", "@")
+	line2 = string.gsub(line2, "ß", "@")
+
 	lcd.clear()
 	lcd.drawBitmap(back, 0, 0)
 
 	lcd.drawText(130, 85, line1, BLACK + DBLSIZE)
 	lcd.drawText(130, 125, line2, BLACK + DBLSIZE)
-	
+
+
 	if cmd ~= 0 then
 		lcd.drawText(130, 25, "Cmd: " .. cmd, BLACK + DBLSIZE)
-		if delay == 0 then
-			if sportTelemetryPush(0x1B, 0x31, 0x5000, cmd) then
-				delay = 25
+		if sportTelemetryPush(0x1B, 0x31, 0x5000, cmd) then
+			if cmd == 0x11 then
+				cmd = 0x10
+				return 2
+			else
+				cmd = 0
 			end
 		end
-	end
-	
-	if delay ~= 0 then
-		delay = delay - 1
 	end
 
 	return 0

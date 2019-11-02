@@ -23,8 +23,8 @@ CustomSPortSensor terminalSensor(getTerminalData);
 //Ecu terminal data
 bool terminalMode = false;
 byte terminalKey = 0;
-byte terminalSentDisplay[32]; 
-byte terminalDisplay[32]; //Sent display values to compare
+byte terminalSentDisplay[32];
+byte terminalDisplay[32] = "ECU Sensor V1.1 Herman Kruisman";
 
 short ecuIndex = 0; //Current index for receiving display byte
 byte ecuPrev; //Previous value
@@ -65,30 +65,33 @@ void loop() {
 sportData getTerminalData(CustomSPortSensor* sensor) {
   sportData data;
 
-  for(short pos = 0; pos <= 7; pos++) {
-    //Check if this part of the display has changed
-    if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
-      || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
-      || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
-      || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
-    {
-      //Update the sent display
-      terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
-      terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
-      terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
-      terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
+  if(terminalMode) {
+    for(short pos = 0; pos <= 7; pos++) {
+      //Check if this part of the display has changed
+      if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
+        || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
+        || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
+        || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
+      {
+        //Update the sent display
+        terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
+        terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
+        terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
+        terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
 
-      data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
+        data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
 
-      //Prepare the S.Port data
-      longHelper lh;
+        //Prepare the S.Port data
+        longHelper lh;
 
-      lh.byteValue[0] = terminalDisplay[pos * 4];
-      lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
-      lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
-      lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
+        lh.byteValue[0] = terminalDisplay[pos * 4];
+        lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
+        lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
+        lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
 
-      data.value = lh.longValue;
+        data.value = lh.longValue;
+        break;
+      }
     }
   }
 
@@ -102,24 +105,29 @@ void commandReceived(int prim, int applicationId, int value) {
     if(value == 0x10) {
       //Enable terminal mode
       terminalMode = true;
+      sensorEGT.enabled = false;
+      sensorRPM.enabled = false;
 
       //Reset display buffer
       for(int i = 0; i <= 31; i++) {
-        terminalSentDisplay[i] = (char)' ';
+        terminalSentDisplay[i] = ' ';
       }
     } else if(value == 0x11) {
       //Disable terminal mode
       terminalMode = false;
+      sensorEGT.enabled = true;
+      sensorRPM.enabled = true;
+
     } else if(value >= 0x20) {
       //Write keyNumber to ECU key buffer
       terminalKey = value - 0x20;
     } 
-
-    hub.sendCommand(0x32, applicationId, value); //return confirmation of command reception
   }
 }
 
 #if defined(ECU_JETRONIC)
+#define ESC 0x1B
+
 int enterKeyRepeat = 0;
 
 void HandleEvojetFrame() {
@@ -127,6 +135,10 @@ void HandleEvojetFrame() {
   digitalWrite(LED_BUILTIN, HIGH);
 
   byte bcdData[4];
+
+  if(terminalMode) {
+    return; //Dont update sensor data when in terminal mode
+  }
 
 //Read other sensor data later
 /*
@@ -236,90 +248,62 @@ void SendKeyCode() {
   terminalKey = 0;
 }
 
-void NewValueEcu(byte newVal)
-{
-  //Skip the esc command
-  if(newVal == ESC)
-  {
-    ecu_valid = false;
-  }
-  //Request for keycode
-  else if(ecu_prev == ESC && newVal == 0x4B)
-  {
+void NewValueEcu(byte newVal) {
+  if(newVal == ESC) { //Skip the esc command
+    ecuValid = false;
+  } else if(ecuPrev == ESC && newVal == 0x4B) { // //Request for keycode
     delay(5);
     SendKeyCode();
-    ecu_valid = false;
-  }
-  //Start of first LCD line
-  else if(ecu_prev == 0x43 && newVal == 0x80)
-  {
-    ecu_index = 0;
-    ecu_valid = true;
-  }
-  //Start of second LCD line
-  else if(ecu_prev == 0x43 && newVal == 0xC0)
-  {
-    ecu_index = 16;
-    ecu_valid = true;
-  }
-  //Store received byte when sequence matches
-  else if(ecu_valid)
-  {
-    display[ecu_index] = newVal;
+    ecuValid = false;
+  } else if(ecuPrev == 0x43 && newVal == 0x80) { //Start of first LCD line
+    ecuIndex = 0;
+    ecuValid = true;
+  } else if(ecuPrev == 0x43 && newVal == 0xC0) { //Start of second LCD line
+    ecuIndex = 16;
+    ecuValid = true;
+  } else if(ecuValid) { //Store received byte when sequence matches
+    terminalDisplay[ecuIndex] = newVal;
 
-    //End of line one reached, disable storage
-    if(ecu_index == 15)
-    {
-      ecu_valid = false;
-    }
-    //End of line two reached, disable storage and handle the full frame
-    else if(ecu_index == 31)
-    {
-      ecu_valid = false;
+    if(ecuIndex == 15) { //End of line one reached, disable storage
+      ecuValid = false;
+    } else if(ecuIndex == 31) { //End of line two reached, disable storage and handle the full frame
+      ecuValid = false;
       HandleEvojetFrame();
-    }
-    //Advance to the next position
-    else
-    {
-      ecu_index++;
+    } else { //Advance to the next position
+      ecuIndex++;
     }
   }
 
-  ecu_prev = newVal;
+  ecuPrev = newVal;
 }
+
 #else if defined(ECU_FADEC)
 int ecuBuffer[50];
 
-void NewValueEcu(byte newVal)
-{
-  if(newVal == 253 && ecu_prev == 252)
-  {  
-    //New frame!
-    ecu_index = 1;
-    ecu_valid = true;
+void NewValueEcu(byte newVal) {
+  if(newVal == 253 && ecuPrev == 252) { //New frame!
+    ecuIndex = 1;
+    ecuValid = true;
   }
 
-  if(ecu_valid)
-  {
-    ecuBuffer[ecu_index] = newVal;
+  if(ecuValid) {
+    ecuBuffer[ecuIndex] = newVal;
 
-    if(ecu_index == 49)
-    {
-      ecu_valid = false;
+    if(ecuIndex == 49) {
+      ecuValid = false;
       SendKeyCode();
       HandleXicoyFrame();
     }
 
-    ecu_index++;
+    ecuIndex++;
   }
 
-  ecu_prev = newVal;
+  ecuPrev = newVal;
 }
 
 void SendKeyCode()
 {
-  if(key == 0)
-  {
+  if(terminalKey == 0) {
     return;
   }
 
@@ -332,41 +316,32 @@ void SendKeyCode()
   data[2] = 0x70;
 
   //Reset all else to 0
-  for(int i = 5; i < 25; i++)
-  {
+  for(int i = 5; i < 25; i++) {
     data[i] = 0;
   }
   
   data[25] = 0xFF;
 
-  if(key == 1) //data down
-  {
+  if(terminalKey == 1) { //data down
     data[3] = 0x42;
     data[4] = 0xB2;
-  }
-  else if(key == 2) //data up
-  {
+  } else if(terminalKey == 2) { //data up
     data[3] = 0x41;
     data[4] = 0xB1;
-  }
-  else if(key == 3) //menu up
-  {
+  } else if(terminalKey == 3) { //menu up
     data[3] = 0x43;
     data[4] = 0xB3;
-  }
-  else if(key == 4) //menu down
-  {
+  } else if(terminalKey == 4) { //menu down
     data[3] = 0x44;
     data[4] = 0xB4;
   }
 
-  ecu.write(data, 26);
+  Serial.write(data, 26);
 
-  key = 0;
+  terminalKey = 0;
 }
 
-void HandleXicoyFrame()
-{
+void HandleXicoyFrame() {
   //Led on indicates data from ECU
   digitalWrite(LED_BUILTIN, HIGH);
 
@@ -375,22 +350,18 @@ void HandleXicoyFrame()
   //Correct frame bytes
   int key = ecuBuffer[keyByte];
 
-  for(int i = 2; i < 50; i++)
-  {
+  for(int i = 2; i < 50; i++) {
     byte val = 255 - ecuBuffer[i] + key;
 
-    if(val > 255)
-    {
+    if(val > 255) {
       val -= 255;
     }
 
     ecuBuffer[i] = val;
   }
 
-  //Create display string
-  for(int i = 0; i < 32; i++)
-  {
-    display[i] = ecuBuffer[i + 2];
+  for(int i = 0; i < 32; i++) { //Create display string
+    terminalDisplay[i] = ecuBuffer[i + 2];
   }
 
 /*
@@ -423,13 +394,11 @@ void HandleXicoyFrame()
   throttle = ecuBuffer[44] / 2.55;
   */
 
-  egt = ecuBuffer[45] * 4;
+  sensorEGT.value = ecuBuffer[45] * 4;
 
   //battVoltage = ecuBuffer[46] * 0.06;
 
-  rpm = ecuBuffer[48];
-  rpm += ecuBuffer[49] * 256;
-  rpm *= 100;
+  sensorEGT.value = (ecuBuffer[48] + (ecuBuffer[49] * 0xFF)) * 100;
 }
 #endif
 

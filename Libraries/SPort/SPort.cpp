@@ -46,27 +46,33 @@ bool SPortHub::SendSensor() {
     return false;
   }
 
-  //Start again with the first sensor
-  if (_sensorIndex >= _sensorCount) {
-    _sensorIndex = 0;
-  } 
+  int startIndex = _sensorIndex; // Know where we started to end the loop
 
-  SPortSensor *sensor = _sensors[_sensorIndex];
-  sportData data = sensor->getData();
+  do {
+    SPortSensor *sensor = _sensors[_sensorIndex];
 
-  if(data.applicationId > 0)
-  {
-    SendData(data, SPORT_HEADER_DATA);
-    
-    if(sensor->valueSend) {
-      sensor->valueSend();
+    _sensorIndex++; // Set next index for previous sensor check
+    if (_sensorIndex >= _sensorCount) {
+      _sensorIndex = 0;
     }
-  } else {
-    SendData(data, SPORT_HEADER_DISCARD);
-  }
 
-  _sensorIndex++;
-  return true;
+    if(sensor->enabled) {
+      sportData data = sensor->getData();
+
+      if(data.applicationId > 0) {
+        SendData(data, SPORT_HEADER_DATA);
+        
+        if(sensor->valueSend) {
+          sensor->valueSend();
+        }
+
+        return true; //Data send, end loop
+      } 
+    }
+  }
+  while(_sensorIndex != startIndex); // Check entire array
+
+  return false; // No active sensor
 }
 
 void SPortHub::handle() {

@@ -23,6 +23,7 @@
         public:
             void (*valueSend)(void);
             virtual sportData getData () = 0;
+            bool enabled = true;
     };
 
     class CustomSPortSensor : public SPortSensor {
