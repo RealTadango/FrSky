@@ -1,4 +1,4 @@
-#include <Sport.h>
+#include <SPort.h>
 
 #define ECU_JETRONIC
 // #define ECU_FADEC
@@ -401,4 +401,3 @@ void HandleXicoyFrame() {
   sensorEGT.value = (ecuBuffer[48] + (ecuBuffer[49] * 0xFF)) * 100;
 }
 #endif
-

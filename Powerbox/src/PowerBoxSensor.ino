@@ -1,4 +1,4 @@
-#include <Sport.h>
+#include <SPort.h>
 
 /* Powerbox M-Link to S.Port converter */
 

@@ -1,5 +1,5 @@
 #include <SPort.h>
-#include <EEProm.h>
+#include <EEPROM.h>
 
 #define SPORT_PIN 3
 #define SPORT_PHYSICAL_ID 0x12

@@ -1,5 +1,7 @@
 # FrSky
-My sensor and lua collection for FrSky Horus and X series receivers with a S.Port
+My sensor and lua collection for FrSky Horus and X series receivers with a S.Port.
+
+Update 03-11--2019: Updated SPort code for the sensors and completed the SPort library including examples. The SPort folder from the Libraries must be copied to the Arduino Library folder (Documents/Arduino/Libraries) before the sensor can be loaded into Arduino IDE.
 
 Lua scripts:
  - [LView](https://github.com/RealTadango/FrSky/tree/master/LView): Grahical log file viewer
