@@ -24,7 +24,6 @@ SimpleSPortSensor sensorRPM(SPORT_APPL_ID_RPM);
 CustomSPortSensor terminalSensor(getTerminalData);
 
 //Ecu terminal data
-bool terminalMode = false;
 byte terminalKey = 0;
 byte terminalSentDisplay[32];
 byte terminalDisplay[32] = "ECU Sensor V1.1 Herman Kruisman";
@@ -33,13 +32,16 @@ short ecuIndex = 0; //Current index for receiving display byte
 byte ecuPrev; //Previous value
 bool ecuValid = false; //Byte received is valid for ECU display
 
-
 void setup() {
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
+
   hub.registerSensor(sensorEGT);
   hub.registerSensor(sensorRPM);
+
+  terminalSensor.enabled = false;
   hub.registerSensor(terminalSensor);
+
   hub.begin();
 
 #if defined(ECU_JETRONIC)
@@ -68,33 +70,31 @@ void loop() {
 sportData getTerminalData(CustomSPortSensor* sensor) {
   sportData data;
 
-  if(terminalMode) {
-    for(short pos = 0; pos <= 7; pos++) {
-      //Check if this part of the display has changed
-      if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
-        || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
-        || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
-        || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
-      {
-        //Update the sent display
-        terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
-        terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
-        terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
-        terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
+  for(short pos = 0; pos <= 7; pos++) {
+    //Check if this part of the display has changed
+    if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
+      || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
+      || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
+      || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
+    {
+      //Update the sent display
+      terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
+      terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
+      terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
+      terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
 
-        data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
+      data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
 
-        //Prepare the S.Port data
-        longHelper lh;
+      //Prepare the S.Port data
+      longHelper lh;
 
-        lh.byteValue[0] = terminalDisplay[pos * 4];
-        lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
-        lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
-        lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
+      lh.byteValue[0] = terminalDisplay[pos * 4];
+      lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
+      lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
+      lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
 
-        data.value = lh.longValue;
-        break;
-      }
+      data.value = lh.longValue;
+      break;
     }
   }
 
@@ -107,7 +107,7 @@ void commandReceived(int prim, int applicationId, int value) {
   if(applicationId == SPORT_APPL_ID_TERMINAL && prim == SPORT_HEADER_WRITE) { //ECU Terminal command
     if(value == CMD_ENABLE_TERMINAL) {
       //Enable terminal mode
-      terminalMode = true;
+      terminalSensor.enabled = true;
       sensorEGT.enabled = false;
       sensorRPM.enabled = false;
 
@@ -117,7 +117,7 @@ void commandReceived(int prim, int applicationId, int value) {
       }
     } else if(value == CMD_DISABLE_TERMINAL) {
       //Disable terminal mode
-      terminalMode = false;
+      terminalSensor.enabled = false;
       sensorEGT.enabled = true;
       sensorRPM.enabled = true;
 
@@ -138,10 +138,6 @@ void HandleEvojetFrame() {
   digitalWrite(LED_BUILTIN, HIGH);
 
   byte bcdData[4];
-
-  if(terminalMode) {
-    return; //Dont update sensor data when in terminal mode
-  }
 
 //Read other sensor data later
 /*
@@ -170,18 +166,22 @@ void HandleEvojetFrame() {
   else if(display[12] == (int)'s' && display[13] == (int)'p') { status = 0x2C; }
   else if(display[12] == (int)'s' && display[13] == (int)'t') { status = 0x2D; }
 */
-  bcdData[0] = terminalDisplay[5];
-  bcdData[1] = terminalDisplay[4];
-  bcdData[2] = terminalDisplay[3];
+  if(sensorEGT.enabled) {
+    bcdData[0] = terminalDisplay[5];
+    bcdData[1] = terminalDisplay[4];
+    bcdData[2] = terminalDisplay[3];
 
-  sensorEGT.value = FromBCD(bcdData, 3);
+    sensorEGT.value = FromBCD(bcdData, 3);
+  }
 
-  bcdData[0] = terminalDisplay[20];
-  bcdData[1] = terminalDisplay[18];
-  bcdData[2] = terminalDisplay[17];
-  bcdData[3] = terminalDisplay[16];
+  if(sensorRPM.enabled) {
+    bcdData[0] = terminalDisplay[20];
+    bcdData[1] = terminalDisplay[18];
+    bcdData[2] = terminalDisplay[17];
+    bcdData[3] = terminalDisplay[16];
 
-  sensorRPM.value = (uint32_t)FromBCD(bcdData, 4) * 100;
+    sensorRPM.value = (uint32_t)FromBCD(bcdData, 4) * 100;
+  }
 /*
   if(display[25] == (int)'U')
   {
