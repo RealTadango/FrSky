@@ -70,13 +70,13 @@ void loop() {
 }
 
 void commandReceived(int prim, int applicationId, int value) {
-  if(prim == 0x30) { //Read
+  if(prim == SPORT_HEADER_READ) { //Read
     if(applicationId == SENSOR_CONF_PULSES) {
-        hub.sendCommand(0x32, applicationId, pulses_cfg * 100);
+        hub.sendCommand(SPORT_HEADER_RESPONSE, applicationId, pulses_cfg * 100);
     } else if(applicationId == SENSOR_CONF_TANKSIZE) {
-        hub.sendCommand(0x32, applicationId, tank_size);
+        hub.sendCommand(SPORT_HEADER_RESPONSE, applicationId, tank_size);
     }
-  } else if(prim == 0x31) { //Write
+  } else if(prim == SPORT_HEADER_WRITE) { //Write
     if(applicationId == SENSOR_CONF_PULSES) {
       pulses_cfg = (double)value / 100;
       saveData();

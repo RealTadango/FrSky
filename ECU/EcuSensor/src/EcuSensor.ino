@@ -11,6 +11,9 @@
 #define SPORT_APPL_ID_EGT 0x0400  
 #define SPORT_APPL_ID_RPM 0x0500  
 
+#define CMD_ENABLE_TERMINAL 0x10
+#define CMD_DISABLE_TERMINAL 0x11
+
 sportData getTerminalData(CustomSPortSensor* sensor);
 void commandReceived(int prim, int applicationId, int value);
 void NewValueEcu(byte newByte);
@@ -101,8 +104,8 @@ sportData getTerminalData(CustomSPortSensor* sensor) {
 void commandReceived(int prim, int applicationId, int value) {
   //Skip new command if old command has to be confirmed first
   
-  if(applicationId == SPORT_APPL_ID_TERMINAL && prim == 0x31) { //ECU Terminal command
-    if(value == 0x10) {
+  if(applicationId == SPORT_APPL_ID_TERMINAL && prim == SPORT_HEADER_WRITE) { //ECU Terminal command
+    if(value == CMD_ENABLE_TERMINAL) {
       //Enable terminal mode
       terminalMode = true;
       sensorEGT.enabled = false;
@@ -112,7 +115,7 @@ void commandReceived(int prim, int applicationId, int value) {
       for(int i = 0; i <= 31; i++) {
         terminalSentDisplay[i] = ' ';
       }
-    } else if(value == 0x11) {
+    } else if(value == CMD_DISABLE_TERMINAL) {
       //Disable terminal mode
       terminalMode = false;
       sensorEGT.enabled = true;

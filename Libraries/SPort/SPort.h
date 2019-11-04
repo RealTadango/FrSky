@@ -5,6 +5,9 @@
     #define SPORT_START 0x7E
     #define SPORT_HEADER_DISCARD 0x00
     #define SPORT_HEADER_DATA 0x10
+    #define SPORT_HEADER_READ 0x30
+    #define SPORT_HEADER_WRITE 0x31
+    #define SPORT_HEADER_RESPONSE 0x32
 
     #include <Arduino.h>
     #include <SoftwareSerial.h>
