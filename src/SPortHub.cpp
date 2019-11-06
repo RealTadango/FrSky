@@ -1,6 +1,4 @@
-#include <Arduino.h>
-#include <SoftwareSerial.h>
-#include "SPort.h"
+#include <SPortHub.h>
 
 #ifdef Serial_
 SPortHub::SPortHub(int physicalId, Serial_& serial):
@@ -205,24 +203,4 @@ void SPortHub::SendByte(byte b) {
   } else {
     stream->write(b);
   }
-}
-
-CustomSPortSensor::CustomSPortSensor(sportData (*callback)(CustomSPortSensor*)) {
-  _callback = callback;
-}
-
-sportData CustomSPortSensor::getData() {
-  return _callback(this);
-}
-
-SimpleSPortSensor::SimpleSPortSensor(int id) {
-  _id = id;
-  value = 0;
-}
-
-sportData SimpleSPortSensor::getData() {
-    sportData data;
-    data.applicationId = _id;
-    data.value = value;
-    return data;
 }
