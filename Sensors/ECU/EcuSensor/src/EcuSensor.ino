@@ -1,6 +1,6 @@
 #include <SPort.h>
 
-// #define ECU_JETRONIC
+//#define ECU_JETRONIC
 #define ECU_FADEC
 
 #define SPORT_PIN 3
@@ -8,8 +8,6 @@
 #define SPORT_COMMAND_ID 0x1B
 
 #define SPORT_APPL_ID_TERMINAL 0x5000  
-#define SPORT_APPL_ID_EGT 0x0400  
-#define SPORT_APPL_ID_RPM 0x0500  
 
 #define CMD_ENABLE_TERMINAL 0x10
 #define CMD_DISABLE_TERMINAL 0x11
@@ -19,8 +17,6 @@ void commandReceived(int prim, int applicationId, int value);
 void NewValueEcu(byte newByte);
 
 SPortHub hub(SPORT_PHYSICAL_ID, SPORT_PIN);
-SimpleSPortSensor sensorEGT(SPORT_APPL_ID_EGT);
-SimpleSPortSensor sensorRPM(SPORT_APPL_ID_RPM);
 CustomSPortSensor terminalSensor(getTerminalData);
 
 //Ecu terminal data
@@ -32,8 +28,7 @@ void setup() {
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
 
-  hub.registerSensor(sensorEGT);
-  hub.registerSensor(sensorRPM);
+  RegisterSensors(hub);
 
   terminalSensor.enabled = false;
   hub.registerSensor(terminalSensor);
@@ -101,8 +96,7 @@ void commandReceived(int prim, int applicationId, int value) {
     if(value == CMD_ENABLE_TERMINAL) {
       //Enable terminal mode
       terminalSensor.enabled = true;
-      sensorEGT.enabled = false;
-      sensorRPM.enabled = false;
+      EnableSensors(false);
 
       //Reset display buffer
       for(int i = 0; i <= 31; i++) {
@@ -111,8 +105,7 @@ void commandReceived(int prim, int applicationId, int value) {
     } else if(value == CMD_DISABLE_TERMINAL) {
       //Disable terminal mode
       terminalSensor.enabled = false;
-      sensorEGT.enabled = true;
-      sensorRPM.enabled = true;
+      EnableSensors(true);
 
     } else if(value >= 0x20) {
       //Write keyNumber to ECU key buffer

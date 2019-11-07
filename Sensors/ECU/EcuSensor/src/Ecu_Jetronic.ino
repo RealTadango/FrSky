@@ -1,9 +1,26 @@
 #if defined(ECU_JETRONIC)
-#define ESC 0x1B
+
+#define SPORT_APPL_ID_EGT 0x0400  
+#define SPORT_APPL_ID_RPM 0x0500  
+
+SimpleSPortSensor sensorEGT(SPORT_APPL_ID_EGT);
+SimpleSPortSensor sensorRPM(SPORT_APPL_ID_RPM);
+
+#define TERMINAL_ESC 0x1B
 short ecuIndex = 0; //Current index for receiving display byte
 byte ecuPrev; //Previous value
 bool ecuValid = false; //Byte received is valid for ECU display
 int enterKeyRepeat = 0;
+
+void RegisterSensors(SPortHub& hub) {
+  hub.registerSensor(sensorEGT);
+  hub.registerSensor(sensorRPM);
+}
+
+void EnableSensors(bool enabled) {
+  sensorEGT.enabled = enabled;
+  sensorRPM.enabled = enabled;
+}
 
 void HandleEvojetFrame() {
   //Led on indicates data from ECU
@@ -124,9 +141,9 @@ void SendKeyCode() {
 }
 
 void NewValueEcu(byte newVal) {
-  if(newVal == ESC) { //Skip the esc command
+  if(newVal == TERMINAL_ESC) { //Skip the esc command
     ecuValid = false;
-  } else if(ecuPrev == ESC && newVal == 0x4B) { // //Request for keycode
+  } else if(ecuPrev == TERMINAL_ESC && newVal == 0x4B) { // //Request for keycode
     delay(5);
     SendKeyCode();
     ecuValid = false;

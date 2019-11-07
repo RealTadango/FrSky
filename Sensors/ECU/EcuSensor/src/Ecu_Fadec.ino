@@ -1,8 +1,33 @@
 #if defined(ECU_FADEC)
+
+#define SPORT_APPL_ID_EGT 0x0400  
+#define SPORT_APPL_ID_RPM 0x0500 
+#define SPORT_APPL_ID_Current 0x0200
+#define SPORT_APPL_ID_Batt_Voltage 0x0210
+#define SPORT_APPL_ID_Pump_Voltage 0x0211
+
+SimpleSPortSensor sensorEGT(SPORT_APPL_ID_EGT);
+SimpleSPortSensor sensorRPM(SPORT_APPL_ID_RPM);
+SimpleSPortSensor sensorCurrent(SPORT_APPL_ID_Current);
+SimpleSPortSensor sensorBattVoltage(SPORT_APPL_ID_Batt_Voltage);
+SimpleSPortSensor sensorPumpVoltage(SPORT_APPL_ID_Pump_Voltage);
+
 short ecuIndex = 0; //Current index for receiving display byte
 byte ecuPrev; //Previous value
 bool ecuValid = false; //Byte received is valid for ECU display
 int ecuBuffer[50];
+
+void RegisterSensors(SPortHub& hub) {
+  hub.registerSensor(sensorEGT);
+  hub.registerSensor(sensorRPM);
+  hub.registerSensor(sensorCurrent);
+  hub.registerSensor(sensorBattVoltage);
+  hub.registerSensor(sensorPumpVoltage);
+}
+
+void EnableSensors(bool enabled) {
+  //No need to disabled fadec sensors
+}
 
 void NewValueEcu(byte newVal) {
   if(newVal == 253 && ecuPrev == 252) { //New frame!
@@ -107,21 +132,19 @@ void HandleXicoyFrame() {
   else if(display[0] == (int)'P' && display[1] == (int)'r') { status = 0x60; }
   else { status = 0x07; }
 
-  current = ecuBuffer[38];
-  current += ecuBuffer[37] * 256;
 
   rc_puls = ecuBuffer[40];
   rc_puls += ecuBuffer[41] * 256;
 
-  pumpVoltage = ecuBuffer[42] * 0.06;
 
   throttle = ecuBuffer[44] / 2.55;
   */
 
+  //TODO Validate values
+  sensorCurrent.value = (ecuBuffer[38] + (ecuBuffer[37] * 0x100)) / 10;
   sensorEGT.value = ecuBuffer[45] * 4;
-
-  //battVoltage = ecuBuffer[46] * 0.06;
-
-  sensorEGT.value = (ecuBuffer[48] + (ecuBuffer[49] * 0xFF)) * 100;
+  sensorRPM.value = (ecuBuffer[48] + (ecuBuffer[49] * 0x100)) * 100;
+  sensorBattVoltage.value = ecuBuffer[46] * 6;
+  sensorPumpVoltage.value = ecuBuffer[42] * 6;
 }
 #endif
