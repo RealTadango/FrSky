@@ -1,7 +1,7 @@
 #include <SPort.h>
 
 //#define ECU_JETRONIC
-#define ECU_FADEC
+//#define ECU_FADEC
 
 #define SPORT_PIN 3
 #define SPORT_PHYSICAL_ID 0x10
@@ -12,19 +12,15 @@
 #define CMD_ENABLE_TERMINAL 0x10
 #define CMD_DISABLE_TERMINAL 0x11
 
+Ecu_Fadec ecu();
+
 sportData getTerminalData(CustomSPortSensor* sensor);
 void commandReceived(int prim, int applicationId, int value);
-void NewValueEcu(byte newByte);
-void RegisterSensors(SPortHub& hub);
-void EcuBegin();
-void EcuHandle();
-void EnableSensors(bool enabled);
 
 SPortHub hub(SPORT_PHYSICAL_ID, SPORT_PIN);
 CustomSPortSensor terminalSensor(getTerminalData);
 
 //Ecu terminal data
-byte terminalKey = 0;
 byte terminalSentDisplay[32];
 byte terminalDisplay[32] = "ECU Sensor V1.1 Herman Kruisman";
 
@@ -32,13 +28,13 @@ void setup() {
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
 
-  RegisterSensors(hub);
+  ecu.registerSensors(hub);
 
   terminalSensor.enabled = false;
   hub.registerSensor(terminalSensor);
 
   hub.begin();
-  EcuBegin();
+  ecu.begin();
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -46,7 +42,7 @@ void setup() {
 
 void loop() {
   hub.handle();
-  EcuHandle();
+  ecu.handle();
 }
 
 sportData getTerminalData(CustomSPortSensor* sensor) {
@@ -90,7 +86,7 @@ void commandReceived(int prim, int applicationId, int value) {
     if(value == CMD_ENABLE_TERMINAL) {
       //Enable terminal mode
       terminalSensor.enabled = true;
-      EnableSensors(false);
+      ecu.enableSensors(false);
 
       //Reset display buffer
       for(int i = 0; i <= 31; i++) {
@@ -99,11 +95,11 @@ void commandReceived(int prim, int applicationId, int value) {
     } else if(value == CMD_DISABLE_TERMINAL) {
       //Disable terminal mode
       terminalSensor.enabled = false;
-      EnableSensors(true);
+      ecu.enableSensors(true);
 
     } else if(value >= 0x20) {
       //Write keyNumber to ECU key buffer
-      terminalKey = value - 0x20;
+      ecu.terminalKey = value - 0x20;
     } 
   }
 }
