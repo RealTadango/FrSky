@@ -6,7 +6,7 @@
     class SimpleSPortSensor : public SPortSensor {
         public: 
             SimpleSPortSensor(int id);
-            virtual sportData getData ();
+            sportData getData ();
             long value;
         private:
             int _id;

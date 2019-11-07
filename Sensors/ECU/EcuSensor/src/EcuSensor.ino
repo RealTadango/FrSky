@@ -1,7 +1,6 @@
 #include <SPort.h>
-
-//#define ECU_JETRONIC
-//#define ECU_FADEC
+#include "Ecu.h"
+#include "Ecu_Fadec.h"
 
 #define SPORT_PIN 3
 #define SPORT_PHYSICAL_ID 0x10
@@ -12,7 +11,7 @@
 #define CMD_ENABLE_TERMINAL 0x10
 #define CMD_DISABLE_TERMINAL 0x11
 
-Ecu_Fadec ecu();
+Ecu_Fadec ecu;
 
 sportData getTerminalData(CustomSPortSensor* sensor);
 void commandReceived(int prim, int applicationId, int value);
@@ -22,7 +21,6 @@ CustomSPortSensor terminalSensor(getTerminalData);
 
 //Ecu terminal data
 byte terminalSentDisplay[32];
-byte terminalDisplay[32] = "ECU Sensor V1.1 Herman Kruisman";
 
 void setup() {
   hub.commandReceived = commandReceived;
@@ -50,26 +48,26 @@ sportData getTerminalData(CustomSPortSensor* sensor) {
 
   for(short pos = 0; pos <= 7; pos++) {
     //Check if this part of the display has changed
-    if(terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
-      || terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
-      || terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
-      || terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
+    if(ecu.terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
+      || ecu.terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
+      || ecu.terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
+      || ecu.terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
     {
       //Update the sent display
-      terminalSentDisplay[pos * 4] = terminalDisplay[pos * 4];
-      terminalSentDisplay[(pos * 4)+1] = terminalDisplay[(pos * 4)+1];
-      terminalSentDisplay[(pos * 4)+2] = terminalDisplay[(pos * 4)+2];
-      terminalSentDisplay[(pos * 4)+3] = terminalDisplay[(pos * 4)+3];
+      terminalSentDisplay[pos * 4] = ecu.terminalDisplay[pos * 4];
+      terminalSentDisplay[(pos * 4)+1] = ecu.terminalDisplay[(pos * 4)+1];
+      terminalSentDisplay[(pos * 4)+2] = ecu.terminalDisplay[(pos * 4)+2];
+      terminalSentDisplay[(pos * 4)+3] = ecu.terminalDisplay[(pos * 4)+3];
 
       data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
 
       //Prepare the S.Port data
       longHelper lh;
 
-      lh.byteValue[0] = terminalDisplay[pos * 4];
-      lh.byteValue[1] = terminalDisplay[(pos * 4)+1];
-      lh.byteValue[2] = terminalDisplay[(pos * 4)+2];
-      lh.byteValue[3] = terminalDisplay[(pos * 4)+3];
+      lh.byteValue[0] = ecu.terminalDisplay[pos * 4];
+      lh.byteValue[1] = ecu.terminalDisplay[(pos * 4)+1];
+      lh.byteValue[2] = ecu.terminalDisplay[(pos * 4)+2];
+      lh.byteValue[3] = ecu.terminalDisplay[(pos * 4)+3];
 
       data.value = lh.longValue;
       break;
