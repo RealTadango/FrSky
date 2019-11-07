@@ -12,6 +12,19 @@ byte ecuPrev; //Previous value
 bool ecuValid = false; //Byte received is valid for ECU display
 int enterKeyRepeat = 0;
 
+void EcuBegin()
+{
+  Serial.begin(9600);
+}
+
+void EcuHandle()
+{
+  while(Serial.available())
+  {
+    NewValueEcu(Serial.read());
+  }
+}
+
 void RegisterSensors(SPortHub& hub) {
   hub.registerSensor(sensorEGT);
   hub.registerSensor(sensorRPM);

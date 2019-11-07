@@ -15,6 +15,10 @@
 sportData getTerminalData(CustomSPortSensor* sensor);
 void commandReceived(int prim, int applicationId, int value);
 void NewValueEcu(byte newByte);
+void RegisterSensors(SPortHub& hub);
+void EcuBegin();
+void EcuHandle();
+void EnableSensors(bool enabled);
 
 SPortHub hub(SPORT_PHYSICAL_ID, SPORT_PIN);
 CustomSPortSensor terminalSensor(getTerminalData);
@@ -34,12 +38,7 @@ void setup() {
   hub.registerSensor(terminalSensor);
 
   hub.begin();
-
-#if defined(ECU_JETRONIC)
-  Serial.begin(9600);
-#else if definec(ECU_FADEC)
-  Serial.begin(4800);
-#endif
+  EcuBegin();
 
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -47,12 +46,7 @@ void setup() {
 
 void loop() {
   hub.handle();
-
-  //Ecu handling
-  while(Serial.available())
-  {
-    NewValueEcu(Serial.read());
-  }
+  EcuHandle();
 }
 
 sportData getTerminalData(CustomSPortSensor* sensor) {
