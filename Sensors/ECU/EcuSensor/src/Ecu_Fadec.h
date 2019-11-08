@@ -4,7 +4,7 @@
   #include "Ecu.h"
   #include <SPort.h>
 
-  class Ecu_Fadec : Ecu {
+  class Ecu_Fadec : public Ecu {
     public:
       byte terminalDisplay[32];
       int terminalKey;

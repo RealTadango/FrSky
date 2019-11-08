@@ -5,8 +5,8 @@ Ecu_Fadec::Ecu_Fadec() {
     sensorEGT = new SimpleSPortSensor(0x0400);
     sensorRPM = new SimpleSPortSensor(0x0500);
     sensorCurrent = new SimpleSPortSensor(0x0200);
-    sensorBattVoltage = new SimpleSPortSensor(0x0210);
-    sensorPumpVoltage = new SimpleSPortSensor(0x0211);
+    sensorBattVoltage = new SimpleSPortSensor(0x0900);
+    sensorPumpVoltage = new SimpleSPortSensor(0x0910);
 }
 
 void Ecu_Fadec::begin() {
@@ -14,11 +14,11 @@ void Ecu_Fadec::begin() {
 }
 
 void Ecu_Fadec::registerSensors(SPortHub& hub) {
-    hub.registerSensor((SPortSensor&)sensorEGT);
-    hub.registerSensor((SPortSensor&)sensorRPM);
-    hub.registerSensor((SPortSensor&)sensorCurrent);
-    hub.registerSensor((SPortSensor&)sensorBattVoltage);
-    hub.registerSensor((SPortSensor&)sensorPumpVoltage);
+    hub.registerSensor(*sensorEGT);
+    hub.registerSensor(*sensorRPM);
+    hub.registerSensor(*sensorCurrent);
+    hub.registerSensor(*sensorBattVoltage);
+    hub.registerSensor(*sensorPumpVoltage);
 }
 
 void Ecu_Fadec::handle() {
