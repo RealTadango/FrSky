@@ -139,9 +139,9 @@ void Ecu_Fadec::HandleXicoyFrame() {
     */
 
     //TODO Validate values
-    sensorCurrent->value = (ecuBuffer[38] + (ecuBuffer[37] * 0x100)) / 10;
     sensorEGT->value = ecuBuffer[45] * 4;
     sensorRPM->value = (ecuBuffer[48] + (ecuBuffer[49] * 0x100)) * 100;
+    sensorCurrent->value = (ecuBuffer[38] + (ecuBuffer[37] * 0x100)) / 10;
     sensorBattVoltage->value = ecuBuffer[46] * 6;
     sensorPumpVoltage->value = ecuBuffer[42] * 6;
 }
