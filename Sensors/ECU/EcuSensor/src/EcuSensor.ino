@@ -1,17 +1,24 @@
 #include <SPort.h>
 #include "Ecu_Fadec.h"
 #include "Ecu_Jetronic.h"
+#include <EEPROM.h>
 
 #define SPORT_PIN 3
 #define SPORT_PHYSICAL_ID 0x10
 #define SPORT_COMMAND_ID 0x1B
 
-#define SPORT_APPL_ID_TERMINAL 0x5000  
+#define SPORT_APPL_ID_TERMINAL_BASE 0x5000
+#define TERMINAL_ENABLE 0x10
+#define TERMINAL_DISABLE 0x10
+#define TERMINAL_KEY 0x20
+#define TERMINAL_KEY 0x20
+#define TERMINAL_TYPE 0x50
 
-#define CMD_ENABLE_TERMINAL 0x10
-#define CMD_DISABLE_TERMINAL 0x11
+#define TYPE_JETRONIC 0x01
+#define TYPE_FADEC 0x02
 
-Ecu* ecu;
+byte ecuType = 0;
+Ecu* ecu = nullptr;
 
 sportData getTerminalData(CustomSPortSensor* sensor);
 void commandReceived(int prim, int applicationId, int value);
@@ -23,15 +30,20 @@ CustomSPortSensor terminalSensor(getTerminalData);
 byte terminalSentDisplay[32];
 
 void setup() {
-  //Choose ecu type
-  //ecu = new Ecu_Fadec());
-  ecu = new Ecu_Jetronic();
+  loadData();
+
+  switch(ecuType) {
+    case TYPE_JETRONIC: ecu = new Ecu_Jetronic(); break;
+    case TYPE_FADEC: ecu = new Ecu_Fadec(); break;
+  }
 
   ecu->begin();
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
 
-  ecu->registerSensors(hub);
+  if(ecu) {
+    ecu->registerSensors(hub);
+  }
 
   terminalSensor.enabled = false;
   hub.registerSensor(terminalSensor);
@@ -44,37 +56,41 @@ void setup() {
 
 void loop() {
   hub.handle();
-  ecu->handle();
+  if(ecu) {
+    ecu->handle();
+  }
 }
 
 sportData getTerminalData(CustomSPortSensor* sensor) {
   sportData data;
 
-  for(short pos = 0; pos <= 7; pos++) {
-    //Check if this part of the display has changed
-    if(ecu->terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
-      || ecu->terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
-      || ecu->terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
-      || ecu->terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
-    {
-      //Update the sent display
-      terminalSentDisplay[pos * 4] = ecu->terminalDisplay[pos * 4];
-      terminalSentDisplay[(pos * 4)+1] = ecu->terminalDisplay[(pos * 4)+1];
-      terminalSentDisplay[(pos * 4)+2] = ecu->terminalDisplay[(pos * 4)+2];
-      terminalSentDisplay[(pos * 4)+3] = ecu->terminalDisplay[(pos * 4)+3];
+  if(ecu) {
+    for(short pos = 0; pos <= 7; pos++) {
+      //Check if this part of the display has changed
+      if(ecu->terminalDisplay[pos * 4] != terminalSentDisplay[pos * 4]
+        || ecu->terminalDisplay[(pos * 4)+1] != terminalSentDisplay[(pos * 4)+1]
+        || ecu->terminalDisplay[(pos * 4)+2] != terminalSentDisplay[(pos * 4)+2]
+        || ecu->terminalDisplay[(pos * 4)+3] != terminalSentDisplay[(pos * 4)+3])
+      {
+        //Update the sent display
+        terminalSentDisplay[pos * 4] = ecu->terminalDisplay[pos * 4];
+        terminalSentDisplay[(pos * 4)+1] = ecu->terminalDisplay[(pos * 4)+1];
+        terminalSentDisplay[(pos * 4)+2] = ecu->terminalDisplay[(pos * 4)+2];
+        terminalSentDisplay[(pos * 4)+3] = ecu->terminalDisplay[(pos * 4)+3];
 
-      data.applicationId = SPORT_APPL_ID_TERMINAL + pos;
+        data.applicationId = SPORT_APPL_ID_TERMINAL_BASE + pos;
 
-      //Prepare the S.Port data
-      longHelper lh;
+        //Prepare the S.Port data
+        longHelper lh;
 
-      lh.byteValue[0] = ecu->terminalDisplay[pos * 4];
-      lh.byteValue[1] = ecu->terminalDisplay[(pos * 4)+1];
-      lh.byteValue[2] = ecu->terminalDisplay[(pos * 4)+2];
-      lh.byteValue[3] = ecu->terminalDisplay[(pos * 4)+3];
+        lh.byteValue[0] = ecu->terminalDisplay[pos * 4];
+        lh.byteValue[1] = ecu->terminalDisplay[(pos * 4)+1];
+        lh.byteValue[2] = ecu->terminalDisplay[(pos * 4)+2];
+        lh.byteValue[3] = ecu->terminalDisplay[(pos * 4)+3];
 
-      data.value = lh.longValue;
-      break;
+        data.value = lh.longValue;
+        break;
+      }
     }
   }
 
@@ -84,24 +100,64 @@ sportData getTerminalData(CustomSPortSensor* sensor) {
 void commandReceived(int prim, int applicationId, int value) {
   //Skip new command if old command has to be confirmed first
   
-  if(applicationId == SPORT_APPL_ID_TERMINAL && prim == SPORT_HEADER_WRITE) { //ECU Terminal command
-    if(value == CMD_ENABLE_TERMINAL) {
-      //Enable terminal mode
-      terminalSensor.enabled = true;
-      ecu->enableSensors(false);
-
-      //Reset display buffer
-      for(int i = 0; i <= 31; i++) {
-        terminalSentDisplay[i] = ' ';
+  switch(prim) {
+    case SPORT_HEADER_READ: {
+      if(applicationId == SPORT_APPL_ID_TERMINAL_BASE && value == TERMINAL_TYPE) { //Request type
+        hub.sendCommand(SPORT_HEADER_RESPONSE, SPORT_APPL_ID_TERMINAL_BASE + TERMINAL_TYPE, ecuType);
       }
-    } else if(value == CMD_DISABLE_TERMINAL) {
-      //Disable terminal mode
-      terminalSensor.enabled = false;
-      ecu->enableSensors(true);
+      break;
+    }
+    case SPORT_HEADER_WRITE: {
+      if(applicationId == SPORT_APPL_ID_TERMINAL_BASE) { //ECU Terminal command
+        if(value == TERMINAL_ENABLE) {
+          //Enable terminal mode
+          terminalSensor.enabled = true;
+          if(ecu) {
+            ecu->enableSensors(false);
+          }
 
-    } else if(value >= 0x20) {
-      //Write keyNumber to ECU key buffer
-      ecu->terminalKey = value - 0x20;
-    } 
+          //Reset display buffer
+          for(int i = 0; i <= 31; i++) {
+            terminalSentDisplay[i] = ' ';
+          }
+        } else if(value == TERMINAL_DISABLE) {
+          //Disable terminal mode
+          terminalSensor.enabled = false;
+          if(ecu) {
+            ecu->enableSensors(true);
+          }
+
+        } else if(value >= TERMINAL_KEY && value < TERMINAL_TYPE) {
+          //Write keyNumber to ECU key buffer
+          if(ecu) {
+            ecu->terminalKey = value - TERMINAL_KEY;
+          }
+        } else if(value >= TERMINAL_TYPE) {
+          ecuType = value - TERMINAL_TYPE;
+          saveData();
+        }
+      }
+    }
+  }
+}
+
+void saveData() {
+  writeEEPROMValue(0, ecuType);
+}
+
+void loadData() {
+  ecuType = readEEPROMValue(0, TYPE_JETRONIC);
+}
+
+void writeEEPROMValue(int pos, int value) {
+  EEPROM.write(pos * 2, lowByte(value));
+  EEPROM.write((pos * 2) + 1, highByte(value));
+}
+
+int readEEPROMValue(int pos, int value) {
+  if(EEPROM.read(pos * 2) == 0xFF && EEPROM.read((pos * 2) + 1) == 0xFF) {
+    return value;
+  } else {
+    return EEPROM.read(pos * 2) + (EEPROM.read((pos * 2) + 1) * 0x100);
   }
 }
