@@ -6,7 +6,7 @@
 
     class Ecu {
         public:
-            byte terminalDisplay[32];
+            char terminalDisplay[32] = " ECU Terminal    V1.0 for Frsky";
             int terminalKey;
 
             virtual void begin();

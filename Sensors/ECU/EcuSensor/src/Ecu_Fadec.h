@@ -6,9 +6,6 @@
 
   class Ecu_Fadec : public Ecu {
     public:
-      byte terminalDisplay[32];
-      int terminalKey;
-
       Ecu_Fadec();
       void begin();
       void registerSensors(SPortHub& hub);

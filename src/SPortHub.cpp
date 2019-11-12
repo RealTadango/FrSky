@@ -118,9 +118,7 @@ void SPortHub::handle() {
 }
 
 void SPortHub::registerSensor(SPortSensor& sensor) {
-    SPortSensor** newSensors = (SPortSensor**)malloc((_sensorCount + 1) * sizeof(SPortSensor*));
-
-    // SPortSensor** newSensors = new SPortSensor*[_sensorCount + 1];
+    SPortSensor** newSensors = new SPortSensor*[_sensorCount + 1];
 
     for(int i = 0; i < _sensorCount; i++) {
       newSensors[i] = _sensors[i];

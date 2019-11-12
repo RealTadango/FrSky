@@ -6,9 +6,6 @@
 
   class Ecu_Jetronic : public Ecu {
     public:
-        byte terminalDisplay[32];
-        int terminalKey;
-
         Ecu_Jetronic();
         void begin();
         void registerSensors(SPortHub& hub);

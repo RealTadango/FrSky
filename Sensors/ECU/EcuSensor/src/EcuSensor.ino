@@ -27,21 +27,25 @@ SPortHub hub(SPORT_PHYSICAL_ID, SPORT_PIN);
 CustomSPortSensor terminalSensor(getTerminalData);
 
 //Ecu terminal data
-byte terminalSentDisplay[32];
+char terminalSentDisplay[32];
 
-void setup() {
-  loadData();
-
+void loadEcuType(){
   switch(ecuType) {
     case TYPE_JETRONIC: ecu = new Ecu_Jetronic(); break;
     case TYPE_FADEC: ecu = new Ecu_Fadec(); break;
   }
+}
 
-  ecu->begin();
+void setup() {
+  loadData();
+
+  loadEcuType();
+
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
 
   if(ecu) {
+    ecu->begin();
     ecu->registerSensors(hub);
   }
 
@@ -135,6 +139,7 @@ void commandReceived(int prim, int applicationId, int value) {
         } else if(value >= TERMINAL_TYPE) {
           ecuType = value - TERMINAL_TYPE;
           saveData();
+          loadEcuType();
         }
       }
     }
