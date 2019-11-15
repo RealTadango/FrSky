@@ -5,7 +5,6 @@ local type = -1
 local newType = 0
 
 local function sendCmd(cmd)
-	print("CMD: " .. cmd)
 	sportTelemetryPush(0x1B, 0x31, 0x5000, cmd)
 end
 
@@ -21,11 +20,20 @@ end
 
 local function init()
   	for i=0,31,1 do
-		ecudisplay[i] = 60
+		ecudisplay[i] = '#'
 	end
 
 	loadWaitBack()
+	loadBrandBack()
 	sendCmd(0x10)
+end
+
+local function fixedChar(newChar)
+	newChar = string.char(newChar)
+	if newChar == 'ß' then
+		newChar = '@'
+	end
+	return newChar	
 end
 
 local function run(event)
@@ -81,10 +89,10 @@ local function run(event)
 			value = value - b2 * 256
 			b1 = math.floor(value % 256)
 
-			ecudisplay[pos * 4] = b1
-			ecudisplay[(pos * 4) + 1] = b2
-			ecudisplay[(pos * 4) + 2] = b3
-			ecudisplay[(pos * 4) + 3] = b4
+			ecudisplay[pos * 4] = fixedChar(b1)
+			ecudisplay[(pos * 4) + 1] = fixedChar(b2)
+			ecudisplay[(pos * 4) + 2] = fixedChar(b3)
+			ecudisplay[(pos * 4) + 3] = fixedChar(b4)
 		elseif primId == 0x32 and dataId == 0x5050 then
 			type = value
 			if type == 0 then
@@ -98,20 +106,6 @@ local function run(event)
 		physicalId, primId, dataId, value = sportTelemetryPop()  
 	end
 	
-	line1 = ""
-	line2 = ""
-
-	for i=0,15,1 do
-		line1 = line1 .. string.char(ecudisplay[i])
-	end
-	
-	for i=16,31,1 do
-		line2 = line2 .. string.char(ecudisplay[i])
-	end
-
-	line1 = string.gsub(line1, "ß", "@")
-	line2 = string.gsub(line2, "ß", "@")
-
 	lcd.clear()
 	lcd.drawBitmap(back, 0, 0)
 	
@@ -139,13 +133,15 @@ local function run(event)
 		x = 130
 		
 		if type == 2 then
-			x = 90
+			x = 88
 			y1 = 75
 			y2 = 110
 		end
 		
-		lcd.drawText(x, y1, line1, BLACK + DBLSIZE)
-		lcd.drawText(x, y2, line2, BLACK + DBLSIZE)
+		for i=0,15,1 do
+			lcd.drawText(x + (i * 19), y1, ecudisplay[i], BLACK + DBLSIZE)
+			lcd.drawText(x + (i * 19), y2, ecudisplay[i + 16], BLACK + DBLSIZE)
+		end
 	else
 		lcd.setColor(CUSTOM_COLOR, WHITE)
 		lcd.drawText(67, 103, "Waiting for terminal...", CUSTOM_COLOR + DBLSIZE)
