@@ -101,6 +101,20 @@ sportData getTerminalData(CustomSPortSensor* sensor) {
   return data;
 }
 
+void setTerminalMode(bool enabled) {
+  terminalSensor.enabled = enabled;
+  if(ecu) {
+    ecu->enableSensors(!enabled);
+  }
+
+  if(enabled) {
+    //Reset display buffer
+    for(int i = 0; i <= 31; i++) {
+      terminalSentDisplay[i] = ' ';
+    }
+  }
+}
+
 void commandReceived(int prim, int applicationId, int value) {
   //Skip new command if old command has to be confirmed first
   
@@ -115,22 +129,10 @@ void commandReceived(int prim, int applicationId, int value) {
       if(applicationId == SPORT_APPL_ID_TERMINAL_BASE) { //ECU Terminal command
         if(value == TERMINAL_ENABLE) {
           //Enable terminal mode
-          terminalSensor.enabled = true;
-          if(ecu) {
-            ecu->enableSensors(false);
-          }
-
-          //Reset display buffer
-          for(int i = 0; i <= 31; i++) {
-            terminalSentDisplay[i] = ' ';
-          }
+          setTerminalMode(true);
         } else if(value == TERMINAL_DISABLE) {
           //Disable terminal mode
-          terminalSensor.enabled = false;
-          if(ecu) {
-            ecu->enableSensors(true);
-          }
-
+          setTerminalMode(false);
         } else if(value >= TERMINAL_KEY && value < TERMINAL_TYPE) {
           //Write keyNumber to ECU key buffer
           if(ecu) {
@@ -140,6 +142,7 @@ void commandReceived(int prim, int applicationId, int value) {
           ecuType = value - TERMINAL_TYPE;
           saveData();
           loadEcuType();
+          setTerminalMode(true);
         }
       }
     }
