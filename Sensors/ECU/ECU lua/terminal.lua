@@ -29,10 +29,16 @@ local function init()
 end
 
 local function fixedChar(newChar)
-	newChar = string.char(newChar)
-	if newChar == 'ß' then
+	newChar = newChar % 0xFF
+
+	if newChar == 223 then
 		newChar = '@'
+	elseif newChar == 228 then
+		newChar = 'u'
+	else
+		newChar = string.char(newChar)
 	end
+
 	return newChar	
 end
 
@@ -51,25 +57,33 @@ local function run(event)
 	elseif event == EVT_MODEL_FIRST then
 		sendCmd(0x10)
 	elseif event == EVT_ENTER_BREAK then
-		sendCmd(0x21)
-	elseif event == EVT_ENTER_LONG then
 		sendCmd(0x22)
-	elseif event == EVT_PAGEDN_FIRST or event == EVT_ROT_LEFT  then
-		sendCmd(0x23)
-	elseif event == EVT_PAGEUP_FIRST or event == EVT_ROT_RIGHT then
-		sendCmd(0x24)
-	elseif event == EVT_SYS_FIRST then
-		if newType == 1 then
-			newType = 2
-		else 
-			newType = 1
-		end
+	elseif event == EVT_ENTER_LONG then
+		newType = 1
 		loadWaitBack();
-	elseif event == EVT_TELEM_FIRST and newType > 0 then
-		sendCmd(0x50 + newType)
-		type = newType
-		newType = -1
-		loadBrandBack()
+	elseif event == EVT_PAGEDN_FIRST or event == EVT_ROT_LEFT  then
+		sendCmd(0x24)
+	elseif event == EVT_PAGEUP_FIRST or event == EVT_ROT_RIGHT then
+		sendCmd(0x23)
+	elseif event == EVT_SYS_FIRST then
+		if newType > 0 then 
+			if newType == 1 then
+				newType = 2
+			else 
+				newType = 1
+			end
+		else
+			sendCmd(0x21)
+		end
+elseif event == EVT_TELEM_FIRST then
+		if newType > 0 then
+			sendCmd(0x50 + newType)
+			type = newType
+			newType = -1
+			loadBrandBack()
+		else
+			sendCmd(0x22)
+		end
 	end
 
 	if type == -1 then

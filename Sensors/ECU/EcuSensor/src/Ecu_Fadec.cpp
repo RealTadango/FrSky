@@ -46,7 +46,11 @@ void Ecu_Fadec::handle() {
 };
 
 void Ecu_Fadec::enableSensors(bool enabled) {
-//No need to disabled fadec sensors
+    sensorEGT->enabled = enabled;
+    sensorRPM->enabled = enabled;
+    sensorCurrent->enabled = enabled;
+    sensorBattVoltage->enabled = enabled;
+    sensorPumpVoltage->enabled = enabled;
 };
 
 void Ecu_Fadec::SendKeyCode() {
