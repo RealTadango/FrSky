@@ -5,7 +5,7 @@
 
     class SPortSensor {
         public:
-            void (*valueSend)(void);
+            void (*valueSend)(void) = nullptr;
             virtual sportData getData () = 0;
             bool enabled = true;
     };
