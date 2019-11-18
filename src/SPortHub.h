@@ -8,8 +8,10 @@
 class SPortHub {
         public:
     #ifdef Serial_
+        #define USE_HWS
             SPortHub(int physicalId, Serial_& serial);
-    #else
+    #elif HardwareSerial
+        #define USE_HWS
             SPortHub(int physicalId, HardwareSerial& serial);
     #endif
             SPortHub(int physicalId, int softwarePin);
@@ -28,7 +30,7 @@ class SPortHub {
 
     #ifdef Serial_
             Serial_* _hwStream;
-    #else
+    #elif HardwareSerial
             HardwareSerial* _hwStream;
     #endif
             SoftwareSerial* _swStream;

@@ -6,7 +6,7 @@ SPortHub::SPortHub(int physicalId, Serial_& serial):
   _hwStream(&serial),
   _sensorIndex(0) {
 }
-#else
+#elif HardwareSerial
 SPortHub::SPortHub(int physicalId, HardwareSerial& serial):
   _physicalId(physicalId),
   _hwStream(&serial),
@@ -22,11 +22,15 @@ SPortHub::SPortHub(int physicalId, int softwarePin):
 }
 
 void SPortHub::begin() {
+  #ifdef _hwStream
     if(_hwStream) {
       _hwStream->begin(SPORT_BAUD, SERIAL_8E2);
     } else {
       _swStream->begin(SPORT_BAUD);
     }
+  #else
+      _swStream->begin(SPORT_BAUD);
+  #endif
 }
 
 bool SPortHub::SendCommand() {
@@ -74,8 +78,11 @@ bool SPortHub::SendSensor() {
 }
 
 void SPortHub::handle() {
+  #ifdef _hwStream
     Stream* stream = _hwStream ? (Stream*)_hwStream : (Stream*)_swStream;
-
+  #else
+    Stream* stream = _swStream;
+  #endif
     while(stream->available() > 0) {
         byte newByte = stream->read();
 
@@ -196,7 +203,11 @@ byte SPortHub::GetChecksum(byte data[], int start, int len) {
 
 //Send a data byte the FrSky way
 void SPortHub::SendByte(byte b) {
-  Stream* stream = _hwStream ? (Stream*)_hwStream : (Stream*)_swStream;
+  #ifdef _hwStream
+    Stream* stream = _hwStream ? (Stream*)_hwStream : (Stream*)_swStream;
+  #else
+    Stream* stream = _swStream;
+  #endif
 
   if(b == 0x7E) {
     stream->write(0x7D);
