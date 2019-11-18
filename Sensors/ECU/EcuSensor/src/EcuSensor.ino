@@ -34,6 +34,11 @@ void loadEcuType(){
     case TYPE_JETRONIC: ecu = new Ecu_Jetronic(); break;
     case TYPE_FADEC: ecu = new Ecu_Fadec(); break;
   }
+
+  if(ecu) {
+    ecu->begin();
+    ecu->registerSensors(hub);
+  }
 }
 
 void setup() {
@@ -43,11 +48,6 @@ void setup() {
 
   hub.commandReceived = commandReceived;
   hub.commandId = SPORT_COMMAND_ID;
-
-  if(ecu) {
-    ecu->begin();
-    ecu->registerSensors(hub);
-  }
 
   terminalSensor.enabled = false;
   hub.registerSensor(terminalSensor);
@@ -129,6 +129,7 @@ void commandReceived(int prim, int applicationId, int value) {
       if(applicationId == SPORT_APPL_ID_TERMINAL_BASE) { //ECU Terminal command
         if(value == TERMINAL_ENABLE) {
           //Enable terminal mode
+          hub.sendCommand(SPORT_HEADER_RESPONSE, SPORT_APPL_ID_TERMINAL_BASE + TERMINAL_TYPE, ecuType);
           setTerminalMode(true);
         } else if(value == TERMINAL_DISABLE) {
           //Disable terminal mode

@@ -75,7 +75,7 @@ local function run(event)
 		else
 			sendCmd(0x21)
 		end
-elseif event == EVT_TELEM_FIRST then
+	elseif event == EVT_TELEM_FIRST then
 		if newType > 0 then
 			sendCmd(0x50 + newType)
 			type = newType
@@ -86,9 +86,9 @@ elseif event == EVT_TELEM_FIRST then
 		end
 	end
 
-	if type == -1 then
-		sportTelemetryPush(0x1B, 0x30, 0x5000, 0x50)
-	end
+	-- if type == -1 then
+	-- 	sportTelemetryPush(0x1B, 0x30, 0x5000, 0x50)
+	-- end
 
 	local physicalId, primId, dataId, value = sportTelemetryPop()  
 	
@@ -107,6 +107,11 @@ elseif event == EVT_TELEM_FIRST then
 			ecudisplay[(pos * 4) + 1] = fixedChar(b2)
 			ecudisplay[(pos * 4) + 2] = fixedChar(b3)
 			ecudisplay[(pos * 4) + 3] = fixedChar(b4)
+
+			if type == -1 then --Fallback to Jetrronic for old type compatibility
+				type = 1
+				loadBrandBack()
+			end
 		elseif primId == 0x32 and dataId == 0x5050 then
 			type = value
 			if type == 0 then
@@ -125,9 +130,9 @@ elseif event == EVT_TELEM_FIRST then
 	
 	if newType > 0 then
 		lcd.setColor(CUSTOM_COLOR, WHITE)
-		lcd.drawText(67, 85, "Set ECU type (TELE)", CUSTOM_COLOR + DBLSIZE)
+		lcd.drawText(67, 82, "Set ECU type with SYS", CUSTOM_COLOR + DBLSIZE)
 		lcd.setColor(CUSTOM_COLOR, BLACK)
-		lcd.drawText(70, 88, "Set ECU type (TELE)", CUSTOM_COLOR + DBLSIZE)
+		lcd.drawText(70, 85, "Set ECU type with SYS", CUSTOM_COLOR + DBLSIZE)
 		
 		typeName = "??"
 		
@@ -141,20 +146,26 @@ elseif event == EVT_TELEM_FIRST then
 		lcd.drawText(67, 128, typeName, CUSTOM_COLOR + DBLSIZE)
 		lcd.setColor(CUSTOM_COLOR, BLACK)
 		lcd.drawText(70, 125, typeName, CUSTOM_COLOR + DBLSIZE)
+
+		lcd.setColor(CUSTOM_COLOR, WHITE)
+		lcd.drawText(67, 162, "Save with TELE", CUSTOM_COLOR + DBLSIZE)
+		lcd.setColor(CUSTOM_COLOR, BLACK)
+		lcd.drawText(70, 165, "Save with TELE", CUSTOM_COLOR + DBLSIZE)
+
 	elseif type > 0 then
 		y1 = 85
 		y2 = 125
-		x = 130
+		x = 140
 		
 		if type == 2 then
-			x = 88
+			x = 98
 			y1 = 75
 			y2 = 110
 		end
 		
 		for i=0,15,1 do
-			lcd.drawText(x + (i * 19), y1, ecudisplay[i], BLACK + DBLSIZE)
-			lcd.drawText(x + (i * 19), y2, ecudisplay[i + 16], BLACK + DBLSIZE)
+			lcd.drawText(x + (i * 19), y1, ecudisplay[i], BLACK + DBLSIZE + 0x04)
+			lcd.drawText(x + (i * 19), y2, ecudisplay[i + 16], BLACK + DBLSIZE + 0x04)
 		end
 	else
 		lcd.setColor(CUSTOM_COLOR, WHITE)
