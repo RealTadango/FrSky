@@ -2,7 +2,7 @@
 
 ![Screenshot](screenshot.png)
 
-Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/LView/LView.lua
+Download the latest version: https://raw.githubusercontent.com/RealTadango/FrSky/master/OpenTX/LView/LView.lua
 
 Update 26-06-2019: The amount of days loaded is increased to 600. This causes a longer initial loading time.
 
