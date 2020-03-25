@@ -148,6 +148,7 @@ void SPortHub::sendCommand(int prim, int applicationId, int value)
 
 void SPortHub::SendData(sportData data, int prim) {
     if(_swStream) {
+        _swStream->stopListening();
         pinMode(_softwarePin, OUTPUT);
         delay(1);
     }
@@ -172,6 +173,7 @@ void SPortHub::SendData(sportData data, int prim) {
 
     if(_swStream) {
         pinMode(_softwarePin, INPUT);
+        _swStream->listen();
     }
 }
 

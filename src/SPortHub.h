@@ -33,10 +33,10 @@ class SPortHub {
     #endif
             SoftwareSerial* _swStream;
             SPortSensor** _sensors;
-            int _sensorCount;
-            int _sensorIndex;
             int _physicalId;
             int _softwarePin;
+            int _sensorIndex;
+            int _sensorCount;
             bool _valid;
             short _index;
             byte _buffer[10];
