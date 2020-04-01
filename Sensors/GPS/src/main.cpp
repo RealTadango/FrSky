@@ -18,8 +18,10 @@
 
 TinyGPSPlus gps;
 SPortHub hub(0x12, 3);
+SimpleSPortSensor sensor_distance(SENSOR_APPL_ID_GDIST);
 SimpleSPortSensor sensor_sats(SENSOR_APPL_ID_GSATS);
 SimpleSPortSensor sensor_hdop(SENSOR_APPL_ID_GHDOP);
+SimpleSPortSensor sensor_trav(SENSOR_APPL_ID_GTRAV);
 SimpleSPortSensor sensor_altitude(SENSOR_APPL_ID_GALT);
 SimpleSPortSensor sensor_speed(SENSOR_APPL_ID_GSPD);
 SimpleSPortSensor sensor_course(SENSOR_APPL_ID_GCOURSE);
@@ -29,6 +31,12 @@ SimpleSPortSensor sensor_longitude(SENSOR_APPL_ID_GPS);
 SimpleSPortSensor sensor_lattitude(SENSOR_APPL_ID_GPS);
 
 unsigned long ledBlink = 0;
+bool home_locked = false;
+double home_long = 0;
+double home_latt = 0;
+double prev_long = 0;
+double prev_latt = 0;
+double traveled = 0;
 
 void updateSensors();
 void updateLed();
@@ -46,8 +54,10 @@ void setup() {
 
   Serial.begin(GPS_BAUD);
 
+  hub.registerSensor(sensor_distance);
   hub.registerSensor(sensor_sats);
   hub.registerSensor(sensor_hdop);
+  hub.registerSensor(sensor_trav);
   hub.registerSensor(sensor_altitude);
   hub.registerSensor(sensor_speed);
   hub.registerSensor(sensor_course);
@@ -72,8 +82,28 @@ void loop() {
 }
 
 void updateSensors() {
+  double lng = gps.location.lng();
+  double lat = gps.location.lat();
+  double hdop = gps.hdop.hdop();
+
+  if(!home_locked && gps.location.isValid()) {
+    home_locked = true;
+    prev_long = home_long = lng;
+    prev_latt = home_latt = lat;
+  }
+
+  if(home_locked && gps.location.isValid()) {
+    sensor_distance.value = gps.distanceBetween(home_latt, home_long, lat, lng);
+    
+    traveled += ((double)((int)(gps.distanceBetween(prev_latt, prev_long, lat, lng) * (double)10))) / (double)10;
+    sensor_trav.value = traveled;
+
+    prev_long = lng;
+    prev_latt = lat;
+  }
+
   sensor_sats.value = gps.satellites.value();
-  sensor_hdop.value = gps.hdop.hdop() *100;
+  sensor_hdop.value = hdop *100;
   sensor_altitude.value = gps.altitude.meters() * 100;
   sensor_speed.value = gps.speed.knots() * 1000;
   sensor_course.value = gps.course.deg() * 100;
@@ -92,7 +122,7 @@ void updateSensors() {
   date.byteValue[3] = (int8_t)(gps.date.year() - 2000);
   sensor_date.value = date.longValue;
 
-  sensor_longitude.value = gps.location.lng() * 600000;
+  sensor_longitude.value = lng * 600000;
   if(sensor_longitude.value < 0) {
     bitSet(sensor_longitude.value, 30); //West
   } else {
@@ -100,7 +130,7 @@ void updateSensors() {
   }
   bitSet(sensor_longitude.value, 31); //Longitude
 
-  sensor_lattitude.value = gps.location.lat() * 600000;
+  sensor_lattitude.value = lat * 600000;
   if(sensor_lattitude.value < 0) {
     bitSet(sensor_lattitude.value, 30); //South
   } else {
