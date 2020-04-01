@@ -16,6 +16,8 @@
 #define SENSOR_APPL_ID_GHDOP 0x5112
 #define SENSOR_APPL_ID_GTRAV 0x5120
 
+#define MIN_TRAVEL_SPEED 5
+
 TinyGPSPlus gps;
 SPortHub hub(0x12, 3);
 SimpleSPortSensor sensor_distance(SENSOR_APPL_ID_GDIST);
@@ -95,11 +97,13 @@ void updateSensors() {
   if(home_locked && gps.location.isValid()) {
     sensor_distance.value = gps.distanceBetween(home_latt, home_long, lat, lng);
     
-    traveled += ((double)((int)(gps.distanceBetween(prev_latt, prev_long, lat, lng) * (double)10))) / (double)10;
-    sensor_trav.value = traveled;
+    if(gps.speed.kmph() >= MIN_TRAVEL_SPEED) {
+      traveled += gps.distanceBetween(prev_latt, prev_long, lat, lng);
+      sensor_trav.value = traveled;
 
-    prev_long = lng;
-    prev_latt = lat;
+      prev_long = lng;
+      prev_latt = lat;
+    }
   }
 
   sensor_sats.value = gps.satellites.value();
