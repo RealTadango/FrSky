@@ -16,7 +16,7 @@
       short ecuIndex = 0; //Current index for receiving display byte
       byte ecuPrev; //Previous value
       bool ecuValid = false; //Byte received is valid for ECU display
-      int ecuBuffer[50];
+      uint32_t ecuBuffer[50];
 
       SimpleSPortSensor* sensorEGT;
       SimpleSPortSensor* sensorRPM;

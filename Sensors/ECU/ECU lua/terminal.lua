@@ -9,12 +9,12 @@ local function sendCmd(cmd)
 end
 
 local function loadWaitBack()
-	back = Bitmap.open("img/back.png")
+	back = Bitmap.open("/scripts/tools/img/back_ecu.png")
 end
 
 local function loadBrandBack()
 	if type > 0 then
-		back = Bitmap.open("img/back" .. type .. ".png")
+		back = Bitmap.open("/scripts/tools/img/back" .. type .. ".png")
 	end
 end
 
