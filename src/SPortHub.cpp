@@ -62,6 +62,7 @@ bool SPortHub::SendSensor() {
       sportData data = sensor->getData();
 
       if(data.applicationId > 0) {
+        delayMicroseconds(400);
         SendData(data, SPORT_HEADER_DATA);
         
         if(sensor->valueSend) {
