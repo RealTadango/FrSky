@@ -501,7 +501,7 @@ local function init()
     local v, r, m, i, e, osname = getVersion()
     if (osname ~= nil and osname == "EdgeTX") then
 	  -- EdgeTX
-      local mbase = model.getInfo().name .. "-20"
+      local mbase = name .. "-20"
       local mblen = string.len(mbase)	  
 	  for fname in dir("/LOGS") do
         if string.find(fname, mbase, 1, true) == 1 then
