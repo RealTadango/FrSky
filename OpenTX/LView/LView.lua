@@ -497,8 +497,24 @@ local function init()
 	local year = now.year
 	local month = now.mon
 	local day = now.day
-
-	for i = 0, 600, 1 do
+	
+    local v, r, m, i, e, osname = getVersion()
+    if (osname ~= nil and osname == "EdgeTX") then
+	  -- EdgeTX
+      local mbase = model.getInfo().name .. "-20"
+      local mblen = string.len(mbase)	  
+	  for fname in dir("/LOGS") do
+        if string.find(fname, mbase, 1, true) == 1 then
+		  local file = io.open("/LOGS/" .. fname, "r")
+		  if file ~= nil then
+			  fileSelection[1].values[#fileSelection[1].values + 1] = fname
+			  io.close(file)
+		  end		
+        end
+	  end  
+	else
+	  -- not EdgeTX
+	  for i = 0, 600, 1 do
 		local testFilename = name .. "-" .. year .. "-" .. doubleDigits(month) .. "-" .. doubleDigits(day) .. ".csv"
 
 		local file = io.open("/LOGS/" .. testFilename, "r")
@@ -517,6 +533,7 @@ local function init()
 			month = 12
 			year = year - 1
 		end
+	  end
 	end
 end
 
