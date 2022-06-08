@@ -504,7 +504,7 @@ local function init()
       local mbase = name .. "-20"
       local mblen = string.len(mbase)	  
 	  for fname in dir("/LOGS") do
-        if string.find(fname, mbase, 1, true) == 1 then
+        if string.find(fname, mbase, 1, true) == 1 and string.find(fname, ".index", 1, true) == nil then
 		  local file = io.open("/LOGS/" .. fname, "r")
 		  if file ~= nil then
 			  fileSelection[1].values[#fileSelection[1].values + 1] = fname
